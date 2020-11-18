@@ -44,9 +44,6 @@ namespace SpriteManager
             // Kommer liksom fra fil "csv" fil
             SpriteInfo spriteInfo = new SpriteInfo(spriteSheet);
 
-            /*Color[] spriteSheetData = new Color[spriteSheet.Width * spriteSheet.Height];
-            spriteSheet.GetData<Color>(spriteSheetData);*/
-
             var counter = new Tools.Incrementor();
             SpriteSheet sheet = new SpriteSheet();
             Texture2D texture = null;
@@ -59,16 +56,19 @@ namespace SpriteManager
             for(int frame = 0; frame < spriteInfo.numFrames; frame++)
             {
                 offset = spriteInfo.frameSize * frame;                
-                source = new Rectangle(offset, 0, spriteInfo.frameSize, spriteInfo.frameSize);
+                source = new Rectangle(
+                    offset,
+                    0,
+                    spriteInfo.frameSize,
+                    spriteInfo.frameSize);
 
                 destination = new Color[spriteSize];
                 spriteSheet.GetData<Color>(0, 0, source, destination, 0, spriteSize);
-                /*for(var i = 0; i < destination.Length; i++)
-                {
-                    destination[i] = Color.Yellow;
-                }*/
 
-                texture = new Texture2D(_graphicsDevice, spriteInfo.frameSize, spriteInfo.frameSize);       
+                texture = new Texture2D(
+                    _graphicsDevice,
+                    spriteInfo.frameSize,
+                    spriteInfo.frameSize); 
                 texture.SetData<Color>(destination);
 
                 pivot = spriteInfo.frameSize / 2.0f;
@@ -88,22 +88,8 @@ namespace SpriteManager
 
                 sheet.Add(name, sprite);
             }
-
-            //DEBUG: sheet.SaveAsPngs();
-            /*sheet.Add("shitguy/walk/null", new SpriteFrame(
-                new Texture2D(_graphicsDevice, spriteInfo.frameSize, spriteInfo.frameSize),
-                new Rectangle(0, 0, spriteInfo.frameSize, spriteInfo.frameSize),
-                new Vector2(0.0f, 0.0f),
-                new Vector2(0.0f, 0.0f),
-                false));
-
-            var color = new Color[256];
-            sheet.Sprite("shitguy/walk/0004").Texture.GetData<Color>(color);
-            foreach(var rgba in color)
-                System.Console.WriteLine(rgba);*/
-
-            //texture.Dispose();
-            //spriteSheet.Dispose();
+            //texture.Dispose() => Fjerner siste ??
+            spriteSheet.Dispose();
             return sheet;
         }
 

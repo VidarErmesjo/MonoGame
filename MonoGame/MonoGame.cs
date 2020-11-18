@@ -13,16 +13,18 @@ namespace MonoGame
         private SpriteFont _spriteFont;
         private SpriteRender _spriteRender;
 
-        private readonly Vector2 screenResolution4K;
+        private Camera _camera;
+
+        private readonly Rectangle screenResolution4K;
 
         // Eiendel av entitet?
         public SpriteSheet spriteSheet;
 
-        public MonoGame(bool fullscreen)
+        public MonoGame(int w, int h, bool fullscreen)
         {
             _graphics = new GraphicsDeviceManager(this);
 
-             screenResolution4K = new Vector2(3840, 2160);
+             screenResolution4K = new Rectangle(0, 0, w, h);
             
             if(fullscreen)
             {
@@ -49,6 +51,8 @@ namespace MonoGame
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
+
+            _camera = new Camera(0.0f, 0.0f, screenResolution4K.X, screenResolution4K.Y);
             
             base.Initialize();
         }
@@ -61,7 +65,6 @@ namespace MonoGame
             var spriteSheetLoader = new SpriteSheetLoader(Content, GraphicsDevice);
             spriteSheet = spriteSheetLoader.Load("Sprites/Shitsprite_idle");
             System.Console.WriteLine(spriteSheet);
-            spriteSheet.SaveAsPngs();
 
             var color = new Color[256];
             spriteSheet.Sprite("shitguy/walk/0004").Texture.GetData<Color>(color);
