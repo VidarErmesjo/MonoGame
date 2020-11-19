@@ -5,8 +5,6 @@ namespace SpriteManager
     using Microsoft.Xna.Framework;
     using Microsoft.Xna.Framework.Graphics;
 
-    using Tools;
-
     public class SpriteRender
     {
         private const float ClockwiseNinetyDegreeRotation = (float)(Math.PI / 2.0f);
@@ -18,7 +16,7 @@ namespace SpriteManager
             _spriteBatch = spriteBatch;
         }
 
-        // <param name="position">This should be where you want the pivot point of the sprite image to be rendered.</param>
+        /// <param name="position">This should be where you want the pivot point of the sprite image to be rendered.</param>
         public void Draw(SpriteFrame sprite, Vector2 position, Color color, float rotation = 0, float scale = 1, SpriteEffects spriteEffects = SpriteEffects.None)
         {
             Vector2 origin = sprite.Origin;
