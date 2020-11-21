@@ -18,7 +18,8 @@ namespace MonoGame
     {
         // Render
         private GraphicsDeviceManager _graphics;
-        public static SpriteBatch spriteBatch { get; private set; }
+        private RenderTarget2D _renderTarget { get; set; }
+        private SpriteBatch _spriteBatch { get; set; }
 
         // Input
         public static MouseState mouseState { get; private set; }
@@ -28,18 +29,30 @@ namespace MonoGame
         public static GamePadState gamePadState { get; private set; }
         public static GamePadState previousGamePadState { get; private set; }
 
-        // Fonts
+        // Fonts => make Array of SpriteFonts
         public static SpriteFont spriteFontConsolas { get; private set; }
 
-        // Temp
+        // Temp =>  Sprite/Animation Atlas
         public SpriteSheet _spriteSheet;
+
+        public static Sprite arrowSprite;
 
         // ESC
         public static World world { get; private set; }
         public static OrthographicCamera camera { get; private set; }
 
+        // Make Array of players, npcs, etc.
         public static Entity player { get; set; }
         //private List<Entity> _entities { get; set; }
+
+        private float _scale = 1.0f;
+        private float _rotation = 0.0f;
+
+        // Experimental
+        public enum Weapon {
+            None = 0,
+            Something
+        };
 
         public MonoGame(int w, int h, bool fullscreen)
         {
@@ -67,6 +80,7 @@ namespace MonoGame
             mouseState = new MouseState();
             previousMouseState = mouseState;
             IsMouseVisible = true;
+            Mouse.SetCursor(MouseCursor.Crosshair);
             keyboardState = new KeyboardState();
             previousKeyboardState = keyboardState;
             gamePadState = new GamePadState();
@@ -74,48 +88,20 @@ namespace MonoGame
 
             // Camera
             camera = new OrthographicCamera(GraphicsDevice);
-
-            // Sprites
-            spriteBatch = new SpriteBatch(GraphicsDevice);
-        }
-
-        protected override void Initialize()
-        {
-            // World
-            world = new WorldBuilder()
-                .AddSystem(new PlayerSystem())
-                .AddSystem(new RenderSystem(GraphicsDevice))
-                .AddSystem(new TestSystem(GraphicsDevice))
-                .AddSystem(new HUDSystem(GraphicsDevice))
-                .Build();
-
-            // Entities
-            player = world.CreateEntity();
-            player.Attach(new Transform2(new Vector2(
-                _graphics.PreferredBackBufferWidth * 0.5f,
-                _graphics.PreferredBackBufferHeight * 0.5f)));
-            player.Attach(new TestComponent(null, 0));
-            player.Attach(new OrthographicCamera(GraphicsDevice));
-
-            world.Initialize();
-            base.Initialize();
         }
 
         protected override void LoadContent()
         {
-            // Mouse cursor
-            var cursor = new Texture2D(GraphicsDevice, 16, 16);
-            Color[] colors = Enumerable.Range(0, cursor.Width * cursor.Height)
-                .Select(i => Color.Red).ToArray();
-            cursor.SetData<Color>(colors);
-            Mouse.SetCursor(MouseCursor.FromTexture2D(cursor, 0, 0));
+            Texture2D texture = Content.Load<Texture2D>("Sprites/Compass");
+            TextureRegion2D textureRegion = new TextureRegion2D(texture, 0, 0, texture.Width, texture.Height);
+            arrowSprite = new Sprite(textureRegion);
 
             // Fonts
             // Put in dictionary
             spriteFontConsolas = Content.Load<SpriteFont>("Fonts/Consolas");
 
             // Entities
-            var texture = Content.Load<Texture2D>("Sprites/Shitsprite");
+            texture = Content.Load<Texture2D>("Sprites/Shitsprite");
             player.Attach(new Sprite(new TextureRegion2D(
                 texture,
                 0,
@@ -124,6 +110,35 @@ namespace MonoGame
                 texture.Height)));
                 
             base.LoadContent();
+        }
+
+        protected override void Initialize()
+        {
+            // Internal resolution = 4K
+            _renderTarget = new RenderTarget2D(
+                GraphicsDevice,
+                3840,
+                2160);
+
+            _spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            // World
+            world = new WorldBuilder()
+                .AddSystem(new RenderSystem(GraphicsDevice))
+                .AddSystem(new HUDSystem(GraphicsDevice))
+                .AddSystem(new ControllerSystem())
+                .AddSystem(new WeaponSystem())
+                .Build();
+
+            // Entities
+            player = world.CreateEntity();
+            player.Attach(new Transform2(new Vector2(
+                GraphicsDevice.PresentationParameters.BackBufferWidth * 0.5f,
+                GraphicsDevice.PresentationParameters.BackBufferHeight * 0.5f)));
+            player.Attach(new WeaponComponent(Weapon.None, 0));
+
+            world.Initialize();
+            base.Initialize();
         }
 
         protected override void Update(GameTime gameTime)
@@ -136,18 +151,13 @@ namespace MonoGame
             if (gamePadState.Buttons.Back == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Escape))
                 Exit();
 
-            // <Camera>
-            var direction = new Vector2(0.0f, 0.0f);
-            direction.X = keyboardState.IsKeyDown(Keys.Left) ? -1.0f :
-                keyboardState.IsKeyDown(Keys.Right) ? 1.0f : 0.0f;  
-            direction.Y = keyboardState.IsKeyDown(Keys.Up) ? -1.0f :
-                keyboardState.IsKeyDown(Keys.Down) ? 1.0f : 0.0f;  
-            direction.Normalize();
+            /*if(camera.Zoom < camera.MaximumZoom)
+                camera.ZoomIn(0.01f);
+            else camera.Zoom = 0.0f;*/
 
-            if(!direction.IsNaN())
-                camera.Move(direction * gameTime.ElapsedGameTime.Milliseconds);
-            // </Camera>
-
+            var worldPosition = MonoGame.camera.ScreenToWorld(new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y));
+            var direction = worldPosition - MonoGame.camera.Center;
+            _rotation = direction.ToAngle();
 
             world.Update(gameTime);
             base.Update(gameTime);
@@ -160,10 +170,31 @@ namespace MonoGame
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);
+            GraphicsDevice.SetRenderTarget(_renderTarget);
             world.Draw(gameTime);
+            GraphicsDevice.SetRenderTarget(null);
 
-            /*spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-            spriteBatch.End();*/          
+            /*if(_rotation < System.Math.PI * 2)
+                _rotation += 0.0f;
+            else
+                _rotation = 0.0f;*/
+
+            _spriteBatch.Begin(
+                sortMode: SpriteSortMode.Deferred,
+                samplerState: SamplerState.PointClamp,
+                transformMatrix: null);
+
+            _spriteBatch.Draw(
+                texture: _renderTarget,
+                position: camera.Center,
+                sourceRectangle: GraphicsDevice.PresentationParameters.Bounds,
+                color: Color.White,
+                rotation: 0,
+                origin: camera.Center,
+                scale: _scale,
+                effects: SpriteEffects.None,
+                layerDepth: 0);
+            _spriteBatch.End();     
             base.Draw(gameTime);
         }
     }

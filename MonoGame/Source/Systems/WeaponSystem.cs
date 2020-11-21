@@ -7,38 +7,34 @@ using MonoGame.Extended.Sprites;
 
 namespace MonoGame.Extended.Entities.Systems
 {
-    public class TestSystem : EntityUpdateSystem //, IUpdateSystem, IDrawSystem, ISystem
+    public class WeaponSystem : EntityUpdateSystem
     {
-        private readonly GraphicsDevice _graphicsDevice;
-        private readonly SpriteBatch _spriteBatch;
-        private MouseState _mouseState;
-        private ComponentMapper<TestComponent> _componentMapper;
+        private ComponentMapper<WeaponComponent> _componentMapper;
 
-        public TestSystem(GraphicsDevice graphicsDevice)
-            : base(Aspect.All(typeof(TestComponent)))
+        public WeaponSystem()
+            : base(Aspect.All(typeof(WeaponComponent)))
         {
-            _graphicsDevice = graphicsDevice;
-            _spriteBatch = new SpriteBatch(graphicsDevice);
-            _mouseState = new MouseState();
         }
 
         public override void Initialize(IComponentMapperService mapperService)
         {
-            _componentMapper = mapperService.GetMapper<TestComponent>();
+            _componentMapper = mapperService.GetMapper<WeaponComponent>();
         }
 
         public override void Update(GameTime gameTime)
         {
-            _mouseState = Mouse.GetState();
             foreach(var entity in ActiveEntities)
             {
                 var component = _componentMapper.Get(entity);
-                if(_mouseState.LeftButton == ButtonState.Pressed)
+                if(MonoGame.mouseState.LeftButton == ButtonState.Pressed)
                 {
                     if(!component.isCharging)
                     {
                         component.toggleIsCharging();
                         component.charge = 0.0f;
+                        //component.origin = new Vector2(MonoGame.camera.Center.X - MonoGame.camera.Position.X, MonoGame.camera.Center.Y - MonoGame.camera.Position.Y);
+                        //component.destination = new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y);
+  
                     }
                     else
                     {
@@ -46,8 +42,8 @@ namespace MonoGame.Extended.Entities.Systems
                         if(component.charge > 255.0f)
                             component.charge = 255.0f;  
 
-                        //component.origin = new Vector2(_camera.Center.X - _camera.Position.X, _camera.Center.Y - _camera.Position.Y);
-                        component.destination = new Vector2(_mouseState.X, _mouseState.Y);
+                        component.origin = new Vector2(MonoGame.camera.Center.X - MonoGame.camera.Position.X, MonoGame.camera.Center.Y - MonoGame.camera.Position.Y);
+                        component.destination = new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y);
                     }
                 }
                 else

@@ -9,21 +9,23 @@ namespace MonoGame.Extended.Entities.Systems
     public class RenderSystem : EntityDrawSystem
     {
         private readonly SpriteBatch _spriteBatch;
+        private GraphicsDevice _graphicsDevice;
         private ComponentMapper<Transform2> _transformMapper;
         private ComponentMapper<Sprite> _spriteMapper;
-        private ComponentMapper<TestComponent> _testComponentMapper;
+        private ComponentMapper<WeaponComponent> _weaponComponentMapper;
 
         public RenderSystem(GraphicsDevice graphicsDevice)
-            : base(Aspect.All(typeof(Sprite), typeof(Transform2), typeof(TestComponent)))
+            : base(Aspect.All(typeof(Sprite), typeof(Transform2), typeof(WeaponComponent)))
         {
             _spriteBatch = new SpriteBatch(graphicsDevice);
+            _graphicsDevice = graphicsDevice;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
         {
             _transformMapper = mapperService.GetMapper<Transform2>();
             _spriteMapper = mapperService.GetMapper<Sprite>();
-            _testComponentMapper = mapperService.GetMapper<TestComponent>();
+            _weaponComponentMapper = mapperService.GetMapper<WeaponComponent>();
         }
 
         public override void Draw(GameTime gameTime)
@@ -38,39 +40,45 @@ namespace MonoGame.Extended.Entities.Systems
 
             foreach(var entity in ActiveEntities)
             {
-                TestComponent testComponent = _testComponentMapper.Get(entity);
+                WeaponComponent weaponComponent = _weaponComponentMapper.Get(entity);
+                Sprite sprite = _spriteMapper.Get(entity);
+                Transform2 transform = _transformMapper.Get(entity);
+                transform.Scale = Vector2.One * 4;
+                _spriteBatch.Draw(sprite, transform);
 
                 // LAZER
-                if(testComponent.isCharging)
+                if(weaponComponent.isCharging)
                 {
                     _spriteBatch.DrawLine(
                         MonoGame.camera.Center.X,
                         MonoGame.camera.Center.Y,
-                        testComponent.destination.X + MonoGame.camera.Position.X,
-                        testComponent.destination.Y + MonoGame.camera.Position.Y,
-                        Color.Green,
-                        testComponent.charge);
+                        weaponComponent.destination.X + MonoGame.camera.Position.X,
+                        weaponComponent.destination.Y + MonoGame.camera.Position.Y,
+                        new Color
+                        {
+                            R = 0,
+                            G = 255,
+                            B = 0,
+                            A = (byte) weaponComponent.charge
+                        },
+                        weaponComponent.charge);
                 }
-                else if(testComponent.charge > 0.0f)
+                else if(weaponComponent.charge > 0.0f)
                 {
                     _spriteBatch.DrawLine(
                         MonoGame.camera.Center.X,
                         MonoGame.camera.Center.Y,
-                        testComponent.destination.X + MonoGame.camera.Position.X,
-                        testComponent.destination.Y + MonoGame.camera.Position.Y,
+                        weaponComponent.destination.X + MonoGame.camera.Position.X,
+                        weaponComponent.destination.Y + MonoGame.camera.Position.Y,
                         new Color
                         {
                             R = 255,
                             G = 0,
                             B = 0,
-                            A = (byte) testComponent.charge
+                            A = (byte) weaponComponent.charge
                         },
-                        testComponent.charge);
+                        weaponComponent.charge);
                 }
-
-                Sprite sprite = _spriteMapper.Get(entity);
-                Transform2 transform = _transformMapper.Get(entity);
-                _spriteBatch.Draw(sprite, transform);
             }
 
             _spriteBatch.End();

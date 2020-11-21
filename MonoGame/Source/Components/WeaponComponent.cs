@@ -4,9 +4,9 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace MonoGame
 {
-    public class TestComponent : IEquatable<TestComponent>
+    public class WeaponComponent : IEquatable<WeaponComponent>
     {
-        public Type Type { get; }
+        public MonoGame.Weapon Type { get; }
         public int Id { get; }
 
         public float charge { get; set; }
@@ -14,7 +14,7 @@ namespace MonoGame
         public Vector2 origin { get ; set; }
         public Vector2 destination { get; set; }
 
-        public TestComponent(Type type, int id)
+        public WeaponComponent(MonoGame.Weapon type, int id)
         {
             Type = type;
             Id = id;
@@ -28,7 +28,7 @@ namespace MonoGame
             isCharging = !isCharging;
         }
 
-        public bool Equals(TestComponent other)
+        public bool Equals(WeaponComponent other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
@@ -40,7 +40,7 @@ namespace MonoGame
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((TestComponent) obj);
+            return Equals((WeaponComponent) obj);
         }
 
         public override int GetHashCode()
@@ -48,12 +48,12 @@ namespace MonoGame
             return Id;
         }
 
-        public static bool operator ==(TestComponent left, TestComponent right)
+        public static bool operator ==(WeaponComponent left, WeaponComponent right)
         {
             return Equals(left, right);
         }
 
-        public static bool operator !=(TestComponent left, TestComponent right)
+        public static bool operator !=(WeaponComponent left, WeaponComponent right)
         {
             return !Equals(left, right);
         }
