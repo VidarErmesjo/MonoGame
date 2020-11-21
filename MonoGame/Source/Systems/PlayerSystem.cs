@@ -1,49 +1,38 @@
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Graphics;
+using MonoGame.Extended;
+using MonoGame.Extended.ViewportAdapters;
+
 namespace MonoGame.Extended.Entities.Systems
 {
-    using Microsoft.Xna.Framework;
-    using Microsoft.Xna.Framework.Input;
-    using SpriteManager;
-
-    public class PlayerSystem : UpdateSystem
+    public class PlayerSystem : EntityUpdateSystem
     {
-
-        public float charge { get; set; }
-        public bool isCharging { get; private set; }
+        private ComponentMapper<OrthographicCamera> _cameraMapper;
 
         public PlayerSystem()
+            : base(Aspect.One(typeof(OrthographicCamera)))
         {
-            charge = 0.0f;
-            isCharging = false;
+        }
+
+        public override void Initialize(IComponentMapperService mapperService)
+        {
+            _cameraMapper = mapperService.GetMapper<OrthographicCamera>();
         }
 
         public override void Update(GameTime gameTime)
         {
-            MouseState mouseState = Mouse.GetState();
-            
-            if(mouseState.LeftButton == ButtonState.Pressed)
-            {
-                if(!isCharging)
-                {
-                    toggleIsCharging();
-                }
-                else
-                {
-                    charge += 0.3333f;
-                }
-            }
-            else
-            {
-                if(isCharging)
-                {
-                    toggleIsCharging();
-                    charge = 0.0f;
-                }
-            }
-        }
+            var direction = new Vector2(0.0f, 0.0f);
+            var _keyboardState = Keyboard.GetState();
+            direction.X = _keyboardState.IsKeyDown(Keys.Left) ? -1.0f :
+                _keyboardState.IsKeyDown(Keys.Right) ? 1.0f : 0.0f;  
+            direction.Y = _keyboardState.IsKeyDown(Keys.Up) ? -1.0f :
+                _keyboardState.IsKeyDown(Keys.Down) ? 1.0f : 0.0f;  
+            direction.Normalize();
 
-        public void toggleIsCharging()
-        {
-            isCharging = !isCharging;
+            OrthographicCamera camera = _cameraMapper.Get(0);
+            if(!direction.IsNaN())
+                camera.Move(direction * gameTime.ElapsedGameTime.Milliseconds);
         }
     }
 }

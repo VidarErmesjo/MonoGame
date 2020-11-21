@@ -5,6 +5,7 @@ namespace MonoGame
     using Microsoft.Xna.Framework.Graphics;
     using Microsoft.Xna.Framework.Input;
 
+// Depricated
     public class Player
     {
         public Vector2 Position { get; set; }
@@ -12,7 +13,7 @@ namespace MonoGame
 
         public float charge { get; set; }
         public bool isCharging { get; private set; }
-        public Vector2 chargePoint { get; set; }
+        public Vector2 dischargePoint { get; set; }
         //public Extended.Shapes.Polygon dechargePoint { get; set; }
 
         public Player()
@@ -21,7 +22,7 @@ namespace MonoGame
             Velocity = new Vector2(0.0f, 0.0f);
             charge = 0.0f;
             isCharging = false;
-            chargePoint = new Vector2(0.0f, 0.0f);
+            dischargePoint = new Vector2(0.0f, 0.0f);
         }
 
         public void toggleIsCharging()
