@@ -5,12 +5,10 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended;
 using MonoGame.Extended.Entities;
-using MonoGame.Extended.Serialization;
-using MonoGame.Extended.Sprites;
-using MonoGame.Extended.Animations;
 using MonoGame.Extended.TextureAtlases;
 using MonoGame.Extended.Entities.Systems;
 using MonoGame.Extended.ViewportAdapters;
+using MonoGame.Aseprite;
 
 namespace MonoGame
 {
@@ -21,6 +19,9 @@ namespace MonoGame
         private RenderTarget2D _renderTarget { get; set; }
         private SpriteBatch _spriteBatch { get; set; }
 
+        // Why??
+        public static ViewportAdapter viewportAdapter { get; private set; }
+
         // Input
         public static MouseState mouseState { get; private set; }
         public static MouseState previousMouseState { get; private set; }
@@ -29,11 +30,11 @@ namespace MonoGame
         public static GamePadState gamePadState { get; private set; }
         public static GamePadState previousGamePadState { get; private set; }
 
-        // Fonts => make Array of SpriteFonts
-        public static SpriteFont spriteFontConsolas { get; private set; }
-
-        // Temp =>  Sprite/Animation Atlas
-        public SpriteSheet _spriteSheet;
+        // Fonts
+        public static IDictionary<string, SpriteFont> spriteFonts { get; private set; }
+ 
+        // Animation test
+        public static AnimatedSprite animatedSprite { get; private set; }
 
         public static Sprite arrowSprite;
 
@@ -42,7 +43,7 @@ namespace MonoGame
         public static OrthographicCamera camera { get; private set; }
 
         // Make Array of players, npcs, etc.
-        public static Entity player { get; set; }
+        public static Entity[] player { get; set; }
         //private List<Entity> _entities { get; set; }
 
         private float _scale = 1.0f;
@@ -54,6 +55,13 @@ namespace MonoGame
             Something
         };
 
+        public enum Player {
+            One = 0,
+            Two,
+            Tree,
+            Four
+        }
+
         public MonoGame(int w, int h, bool fullscreen)
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -62,7 +70,6 @@ namespace MonoGame
                 _graphics.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
                 _graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
                 _graphics.IsFullScreen = true;
-
             }
             else
             {
@@ -86,34 +93,56 @@ namespace MonoGame
             gamePadState = new GamePadState();
             previousGamePadState = gamePadState;
 
-            // Camera
-            camera = new OrthographicCamera(GraphicsDevice);
+            // Stuffz
+            player = new Entity[4];
+
+            spriteFonts = new Dictionary<string, SpriteFont>();
+
         }
 
         protected override void LoadContent()
         {
+            //base.LoadContent();
+
+            // HUD components
             Texture2D texture = Content.Load<Texture2D>("Sprites/Compass");
-            TextureRegion2D textureRegion = new TextureRegion2D(texture, 0, 0, texture.Width, texture.Height);
-            arrowSprite = new Sprite(textureRegion);
+            arrowSprite = new Sprite(texture, new Vector2(
+                GraphicsDevice.PresentationParameters.BackBufferWidth * 0.5f,
+                GraphicsDevice.PresentationParameters.BackBufferHeight * 0.5f));
+            arrowSprite.RenderDefinition.Scale = Vector2.One * 0.032f;
+            arrowSprite.RenderDefinition.Origin = new Vector2(
+                arrowSprite.Texture.Width * 0.5f,
+                arrowSprite.Texture.Height * 0.5f);
+            arrowSprite.RenderDefinition.SpriteEffect = SpriteEffects.FlipVertically;
+
+            // Animation test
+            AnimationDefinition animationDefinition = Content.Load<AnimationDefinition>("Sprites/ShitspriteAnimation");
+            Texture2D spriteSheet = Content.Load<Texture2D>("Sprites/ShitspriteFrames");
+                animatedSprite = new AnimatedSprite(spriteSheet,
+                animationDefinition,
+                Vector2.One * GraphicsDevice.PresentationParameters.BackBufferWidth * 0.5f);
+            animatedSprite.RenderDefinition.SpriteEffect = SpriteEffects.FlipVertically;
+            animatedSprite.RenderDefinition.Scale = Vector2.One * 4;
+            animatedSprite.RenderDefinition.Origin = new Vector2(
+                animatedSprite.CurrentFrame.frame.Width * 0.5f,
+                animatedSprite.CurrentFrame.frame.Height * 0.5f);
 
             // Fonts
-            // Put in dictionary
-            spriteFontConsolas = Content.Load<SpriteFont>("Fonts/Consolas");
-
-            // Entities
-            texture = Content.Load<Texture2D>("Sprites/Shitsprite");
-            player.Attach(new Sprite(new TextureRegion2D(
-                texture,
-                0,
-                0,
-                texture.Width,
-                texture.Height)));
-                
-            base.LoadContent();
+            spriteFonts.Add("Consolas", Content.Load<SpriteFont>("Fonts/Consolas"));
+            spriteFonts.Add("Arial", Content.Load<SpriteFont>("Fonts/Arial"));
         }
 
         protected override void Initialize()
         {
+            base.Initialize();
+            // Camera
+            viewportAdapter = new BoxingViewportAdapter(
+                Window,
+                GraphicsDevice,
+                GraphicsDevice.PresentationParameters.BackBufferWidth,
+                GraphicsDevice.PresentationParameters.BackBufferHeight);
+            camera = new OrthographicCamera(GraphicsDevice);
+
             // Internal resolution = 4K
             _renderTarget = new RenderTarget2D(
                 GraphicsDevice,
@@ -131,18 +160,27 @@ namespace MonoGame
                 .Build();
 
             // Entities
-            player = world.CreateEntity();
-            player.Attach(new Transform2(new Vector2(
+            player[(int) Player.One] = world.CreateEntity();
+            // texture from atlas?
+            Texture2D texture = Content.Load<Texture2D>("Sprites/ShitspriteFrames");
+            player[(int) Player.One].Attach(new Extended.Sprites.Sprite(new TextureRegion2D(
+                texture,
+                0,
+                0,
+                texture.Width,
+                texture.Height)));
+            player[(int) Player.One].Attach(new Transform2(new Vector2(
                 GraphicsDevice.PresentationParameters.BackBufferWidth * 0.5f,
                 GraphicsDevice.PresentationParameters.BackBufferHeight * 0.5f)));
-            player.Attach(new WeaponComponent(Weapon.None, 0));
+            player[(int) Player.One].Attach(new WeaponComponent(Weapon.None, 0));
 
             world.Initialize();
-            base.Initialize();
+            //base.Initialize();
         }
 
         protected override void Update(GameTime gameTime)
         {
+            //base.Update(gameTime);
             mouseState = Mouse.GetState();
             keyboardState = Keyboard.GetState();
             // Expand for more gamepads
@@ -151,6 +189,10 @@ namespace MonoGame
             if (gamePadState.Buttons.Back == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Escape))
                 Exit();
 
+            animatedSprite.Play("Walk");
+            animatedSprite.Update(gameTime);
+            //animatedSprite.Play("walk");
+            //animatedSprite.Update(gameTime);
             /*if(camera.Zoom < camera.MaximumZoom)
                 camera.ZoomIn(0.01f);
             else camera.Zoom = 0.0f;*/
@@ -160,8 +202,8 @@ namespace MonoGame
             _rotation = direction.ToAngle();
 
             world.Update(gameTime);
-            base.Update(gameTime);
 
+            base.Update(gameTime);
             previousMouseState = mouseState;
             previousKeyboardState = keyboardState;
             previousGamePadState = gamePadState;
@@ -169,10 +211,12 @@ namespace MonoGame
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.Black);
             GraphicsDevice.SetRenderTarget(_renderTarget);
+            GraphicsDevice.Clear(Color.Black);
             world.Draw(gameTime);
             GraphicsDevice.SetRenderTarget(null);
+            viewportAdapter.Reset();
+
 
             /*if(_rotation < System.Math.PI * 2)
                 _rotation += 0.0f;
@@ -184,18 +228,21 @@ namespace MonoGame
                 samplerState: SamplerState.PointClamp,
                 transformMatrix: null);
 
-            _spriteBatch.Draw(
-                texture: _renderTarget,
-                position: camera.Center,
-                sourceRectangle: GraphicsDevice.PresentationParameters.Bounds,
-                color: Color.White,
-                rotation: 0,
-                origin: camera.Center,
-                scale: _scale,
-                effects: SpriteEffects.None,
-                layerDepth: 0);
-            _spriteBatch.End();     
-            base.Draw(gameTime);
+                _spriteBatch.Draw(
+                    texture: _renderTarget,
+                    position: camera.Center,
+                    sourceRectangle: GraphicsDevice.PresentationParameters.Bounds,
+                    color: Color.White,
+                    rotation: 0,
+                    origin: camera.Center,
+                    scale: _scale,
+                    effects: SpriteEffects.None,
+                    layerDepth: 0);
+
+                //animatedSprite.Render(_spriteBatch);
+;
+            _spriteBatch.End(); 
+            base.Draw(gameTime);    
         }
     }
 }

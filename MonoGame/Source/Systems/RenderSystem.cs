@@ -30,19 +30,24 @@ namespace MonoGame.Extended.Entities.Systems
 
         public override void Draw(GameTime gameTime)
         {
-            var transformMatrix = MonoGame.camera.GetViewMatrix();
-
             _spriteBatch.Begin(
                 sortMode: SpriteSortMode.Deferred,
                 blendState: BlendState.NonPremultiplied,
                 samplerState: SamplerState.PointClamp,
-                transformMatrix: transformMatrix);
+                transformMatrix: MonoGame.camera.GetViewMatrix());
+
+            var screenToWorld = MonoGame.camera.ScreenToWorld(new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y));
+            var direction = screenToWorld - MonoGame.camera.Center;
+            direction.Normalize();
+            MonoGame.animatedSprite.RenderDefinition.Rotation = direction.ToAngle();
+            MonoGame.animatedSprite.Render(_spriteBatch);
 
             foreach(var entity in ActiveEntities)
             {
                 WeaponComponent weaponComponent = _weaponComponentMapper.Get(entity);
                 Sprite sprite = _spriteMapper.Get(entity);
                 Transform2 transform = _transformMapper.Get(entity);
+
                 transform.Scale = Vector2.One * 4;
                 _spriteBatch.Draw(sprite, transform);
 

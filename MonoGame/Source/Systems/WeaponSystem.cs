@@ -54,7 +54,7 @@ namespace MonoGame.Extended.Entities.Systems
                     if(!component.isCharging)
                     {
                         if(component.charge > 0.0f)
-                            component.charge -= 0.25f;
+                            component.charge -= 1.0f;
                         else
                             component.charge = 0.0f;
                     }

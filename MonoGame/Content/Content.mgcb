@@ -10,7 +10,7 @@
 
 #-------------------------------- References --------------------------------#
 
-/reference:C:\Users\Voidar\.nuget\packages\monogame.extended.content.pipeline\3.8.0\tools\MonoGame.Extended.Content.Pipeline.dll
+/reference:..\..\..\..\..\..\.nuget\packages\monogame.aseprite\1.2.2\contentFiles\cs\netstandard2.0\MonoGame.Aseprite.ContentPipeline.References\MonoGame.Aseprite.ContentPipeline.dll
 
 #---------------------------------- Content ---------------------------------#
 
@@ -40,7 +40,12 @@
 /processorParam:TextureFormat=Color
 /build:Sprites/Compass.png
 
-#begin Sprites/Shitsprite.png
+#begin Sprites/ShitspriteAnimation.json
+/importer:AsepriteImporter
+/processor:Processor
+/build:Sprites/ShitspriteAnimation.json
+
+#begin Sprites/ShitspriteFrames.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -50,5 +55,5 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Sprites/Shitsprite.png
+/build:Sprites/ShitspriteFrames.png
 

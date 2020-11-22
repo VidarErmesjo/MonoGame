@@ -1,0 +1,17 @@
+{
+  "textureAtlas": {
+    "texture": "Shitsprite.png",
+    "regionWidth": 16,
+    "regionHeight": 16
+  },
+  "cycles": {
+    "idle": {
+      "frames": [0],
+      "isLooping": true
+    },
+    "walk": {
+      "frames": [0,1,2,3],
+      "isLooping": false
+    }
+  }
+}

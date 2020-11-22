@@ -1,6 +1,6 @@
 { "frames": [
    {
-    "filename": "Shitsprite 0.ase",
+    "filename": "Shitsprite_idle 0.ase",
     "frame": { "x": 0, "y": 0, "w": 16, "h": 16 },
     "rotated": false,
     "trimmed": false,
@@ -9,7 +9,7 @@
     "duration": 100
    },
    {
-    "filename": "Shitsprite 1.ase",
+    "filename": "Shitsprite_idle 1.ase",
     "frame": { "x": 16, "y": 0, "w": 16, "h": 16 },
     "rotated": false,
     "trimmed": false,
@@ -18,7 +18,7 @@
     "duration": 100
    },
    {
-    "filename": "Shitsprite 2.ase",
+    "filename": "Shitsprite_idle 2.ase",
     "frame": { "x": 32, "y": 0, "w": 16, "h": 16 },
     "rotated": false,
     "trimmed": false,
@@ -27,7 +27,7 @@
     "duration": 100
    },
    {
-    "filename": "Shitsprite 3.ase",
+    "filename": "Shitsprite_idle 3.ase",
     "frame": { "x": 48, "y": 0, "w": 16, "h": 16 },
     "rotated": false,
     "trimmed": false,
@@ -39,11 +39,12 @@
  "meta": {
   "app": "http://www.aseprite.org/",
   "version": "1.2.25-x64",
-  "image": "Shitsprite.png",
+  "image": "ShitspriteFrames.png",
   "format": "RGBA8888",
   "size": { "w": 64, "h": 16 },
   "scale": "1",
   "frameTags": [
+   { "name": "Walk", "from": 0, "to": 3, "direction": "forward" }
   ],
   "layers": [
    { "name": "Layer", "opacity": 255, "blendMode": "normal" }
