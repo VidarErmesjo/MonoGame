@@ -39,7 +39,7 @@
  "meta": {
   "app": "http://www.aseprite.org/",
   "version": "1.2.25-x64",
-  "image": "ShitspriteFrames.png",
+  "image": "Shitsprite.png",
   "format": "RGBA8888",
   "size": { "w": 64, "h": 16 },
   "scale": "1",

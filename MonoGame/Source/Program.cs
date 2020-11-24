@@ -27,7 +27,7 @@ namespace MonoGame
                 }
             }
 
-            using (var game = new MonoGame(3840, 2160, fullscreen))
+            using (var game = new MonoGame(3840 / 2, 2160 / 2, fullscreen))
                 game.Run();
         }
     }

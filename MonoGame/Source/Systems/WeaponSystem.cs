@@ -32,9 +32,6 @@ namespace MonoGame.Extended.Entities.Systems
                     {
                         component.toggleIsCharging();
                         component.charge = 0.0f;
-                        //component.origin = new Vector2(MonoGame.camera.Center.X - MonoGame.camera.Position.X, MonoGame.camera.Center.Y - MonoGame.camera.Position.Y);
-                        //component.destination = new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y);
-  
                     }
                     else
                     {
@@ -42,8 +39,8 @@ namespace MonoGame.Extended.Entities.Systems
                         if(component.charge > 255.0f)
                             component.charge = 255.0f;  
 
-                        component.origin = new Vector2(MonoGame.camera.Center.X - MonoGame.camera.Position.X, MonoGame.camera.Center.Y - MonoGame.camera.Position.Y);
-                        component.destination = new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y);
+                        component.origin = MonoGame.camera.Center;
+                        component.destination = MonoGame.camera.ScreenToWorld(new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y));
                     }
                 }
                 else

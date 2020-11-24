@@ -1,4 +1,4 @@
-namespace Tools
+namespace MonoGame.Tools
 {
     public class Incrementor
     {

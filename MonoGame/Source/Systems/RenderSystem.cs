@@ -36,9 +36,11 @@ namespace MonoGame.Extended.Entities.Systems
                 samplerState: SamplerState.PointClamp,
                 transformMatrix: MonoGame.camera.GetViewMatrix());
 
-            var screenToWorld = MonoGame.camera.ScreenToWorld(new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y));
-            var direction = screenToWorld - MonoGame.camera.Center;
+            var direction = new Vector2(
+                (float) System.Math.Sin(MonoGame.rotation),
+                (float) -System.Math.Cos(MonoGame.rotation));
             direction.Normalize();
+
             MonoGame.animatedSprite.RenderDefinition.Rotation = direction.ToAngle();
             MonoGame.animatedSprite.Render(_spriteBatch);
 
@@ -55,10 +57,10 @@ namespace MonoGame.Extended.Entities.Systems
                 if(weaponComponent.isCharging)
                 {
                     _spriteBatch.DrawLine(
-                        MonoGame.camera.Center.X,
-                        MonoGame.camera.Center.Y,
-                        weaponComponent.destination.X + MonoGame.camera.Position.X,
-                        weaponComponent.destination.Y + MonoGame.camera.Position.Y,
+                        weaponComponent.origin.X,
+                        weaponComponent.origin.Y,
+                        weaponComponent.destination.X,
+                        weaponComponent.destination.Y,
                         new Color
                         {
                             R = 0,
@@ -71,10 +73,10 @@ namespace MonoGame.Extended.Entities.Systems
                 else if(weaponComponent.charge > 0.0f)
                 {
                     _spriteBatch.DrawLine(
-                        MonoGame.camera.Center.X,
-                        MonoGame.camera.Center.Y,
-                        weaponComponent.destination.X + MonoGame.camera.Position.X,
-                        weaponComponent.destination.Y + MonoGame.camera.Position.Y,
+                        weaponComponent.origin.X,
+                        weaponComponent.origin.Y,
+                        weaponComponent.destination.X,
+                        weaponComponent.destination.Y,
                         new Color
                         {
                             R = 255,

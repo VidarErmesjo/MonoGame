@@ -40,12 +40,7 @@
 /processorParam:TextureFormat=Color
 /build:Sprites/Compass.png
 
-#begin Sprites/ShitspriteAnimation.json
-/importer:AsepriteImporter
-/processor:Processor
-/build:Sprites/ShitspriteAnimation.json
-
-#begin Sprites/ShitspriteFrames.png
+#begin Sprites/Shitsprite.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -55,5 +50,10 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Sprites/ShitspriteFrames.png
+/build:Sprites/Shitsprite.png
+
+#begin Sprites/ShitspriteAnimation.json
+/importer:AsepriteImporter
+/processor:Processor
+/build:Sprites/ShitspriteAnimation.json
 

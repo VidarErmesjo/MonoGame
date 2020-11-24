@@ -22,18 +22,23 @@ namespace MonoGame.Extended.Entities.Systems
         public override void Draw(GameTime gameTime)
         {
             WeaponComponent weaponComponent;
-            Vector2 screenToWorld;
+            //Vector2 screenToWorld;
 
             weaponComponent = MonoGame.player[(int) MonoGame.Player.One].Get<WeaponComponent>();
-            screenToWorld = MonoGame.camera.ScreenToWorld(new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y));
 
-            var direction = screenToWorld - MonoGame.camera.Center;
+            //screenToWorld = MonoGame.camera.ScreenToWorld(new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y));
+            //screenToWorld = new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y);
+
+            var direction = new Vector2(
+                (float) System.Math.Sin(MonoGame.rotation),
+                (float) -System.Math.Cos(MonoGame.rotation));
             direction.Normalize();
 
             _spriteBatch.Begin(
                 sortMode: SpriteSortMode.Deferred,
                 blendState: BlendState.AlphaBlend,
-                samplerState: SamplerState.PointClamp);
+                samplerState: SamplerState.PointClamp,
+                transformMatrix: MonoGame.viewportAdapter.GetScaleMatrix());
 
                 _spriteBatch.DrawString(
                     _spriteFont,
@@ -55,27 +60,36 @@ namespace MonoGame.Extended.Entities.Systems
 
                 _spriteBatch.DrawString(
                     _spriteFont,
-                    "Cursor: " + screenToWorld.X.ToString("0") + ", " + screenToWorld.Y.ToString("0"),
+                    "Cursor: " + MonoGame.mouseState.X.ToString("0") + ", " + MonoGame.mouseState.Y.ToString("0"),
                     new Vector2(0.0f, _spriteFont.LineSpacing * 3),
                     Color.White);
 
+                var screenToWorld = MonoGame.camera.ScreenToWorld(Vector2.One * MonoGame.mouseState.Position.ToVector2());
                 _spriteBatch.DrawString(
                     _spriteFont,
-                    "Direction: " + direction.X.ToString("0.0000") + ", " + direction.Y.ToString("0.0000"),
+                    "ScreenToWorld(): " + screenToWorld.X.ToString("0") + ", " + screenToWorld.Y.ToString("0"),
                     new Vector2(0.0f, _spriteFont.LineSpacing * 4),
                     Color.White);
 
                 _spriteBatch.DrawString(
                     _spriteFont,
-                    "Angle: " + (180 + direction.ToAngle() * 180 / System.Math.PI).ToString("0.00"),
+                    "Direction: " + direction.X.ToString("0.0000") + ", " + direction.Y.ToString("0.0000"),
                     new Vector2(0.0f, _spriteFont.LineSpacing * 5),
                     Color.White);
 
                 _spriteBatch.DrawString(
                     _spriteFont,
-                    "Charge: " + weaponComponent.charge.ToString("0"),
+                    "Angle: " + (180 + direction.ToAngle() * 180 / System.Math.PI).ToString("0.00"),
                     new Vector2(0.0f, _spriteFont.LineSpacing * 6),
                     Color.White);
+
+                _spriteBatch.DrawString(
+                    _spriteFont,
+                    "Charge: " + weaponComponent.charge.ToString("0"),
+                    new Vector2(0.0f, _spriteFont.LineSpacing * 7),
+                    Color.White);
+
+                _spriteBatch.DrawCircle(new CircleF(MonoGame.mouseState.Position.ToVector2().ToPoint(), 32.0f), 6, Color.Red, 5.0f);
 
                 MonoGame.arrowSprite.RenderDefinition.Rotation = direction.ToAngle();
                 MonoGame.arrowSprite.Render(_spriteBatch);

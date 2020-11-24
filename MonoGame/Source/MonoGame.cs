@@ -16,7 +16,8 @@ namespace MonoGame
     {
         // Render
         private GraphicsDeviceManager _graphics;
-        private RenderTarget2D _renderTarget { get; set; }
+        private RenderTarget2D _internalRenderTarget { get; set; }
+        private readonly Vector2 _internalRenderBounds;
         private SpriteBatch _spriteBatch { get; set; }
 
         // Why??
@@ -47,7 +48,7 @@ namespace MonoGame
         //private List<Entity> _entities { get; set; }
 
         private float _scale = 1.0f;
-        private float _rotation = 0.0f;
+        public static float rotation { get; private set; }
 
         // Experimental
         public enum Weapon {
@@ -73,9 +74,13 @@ namespace MonoGame
             }
             else
             {
-                _graphics.PreferredBackBufferWidth = (int) w / 2;
-                _graphics.PreferredBackBufferHeight = (int) h / 2;
+                _graphics.PreferredBackBufferWidth = (int) w;
+                _graphics.PreferredBackBufferHeight = (int) h;
             }
+
+            _internalRenderBounds = new Vector2(w, h);
+            
+            Window.AllowUserResizing = true;
 
             IsFixedTimeStep = true;            
             _graphics.SynchronizeWithVerticalRetrace = true;
@@ -97,13 +102,30 @@ namespace MonoGame
             player = new Entity[4];
 
             spriteFonts = new Dictionary<string, SpriteFont>();
+        }
 
+        protected override void Dispose(bool disposing)
+        {
+            if(disposing)
+            {
+                _internalRenderTarget.Dispose();
+                _internalRenderTarget = null;
+                _spriteBatch.Dispose();
+                _spriteBatch = null;
+                _graphics.Dispose();
+                _graphics = null;
+                viewportAdapter.Dispose();
+                viewportAdapter = null;
+                world.Dispose();
+                world = null;
+            }
+
+            base.Dispose(disposing);
         }
 
         protected override void LoadContent()
         {
-            //base.LoadContent();
-
+            base.LoadContent();
             // HUD components
             Texture2D texture = Content.Load<Texture2D>("Sprites/Compass");
             arrowSprite = new Sprite(texture, new Vector2(
@@ -116,11 +138,16 @@ namespace MonoGame
             arrowSprite.RenderDefinition.SpriteEffect = SpriteEffects.FlipVertically;
 
             // Animation test
+            // Make functional loader? animatedSprite = AnimatedSpriteloader(string file)
             AnimationDefinition animationDefinition = Content.Load<AnimationDefinition>("Sprites/ShitspriteAnimation");
-            Texture2D spriteSheet = Content.Load<Texture2D>("Sprites/ShitspriteFrames");
+            Texture2D spriteSheet = Content.Load<Texture2D>("Sprites/Shitsprite");
                 animatedSprite = new AnimatedSprite(spriteSheet,
                 animationDefinition,
                 Vector2.One * GraphicsDevice.PresentationParameters.BackBufferWidth * 0.5f);
+            /*animatedSprite = Tools.AnimatedSpriteLoader(
+                Content,
+                Vector2.One * GraphicsDevice.PresentationParameters.BackBufferWidth * 0.5f,
+                4);*/
             animatedSprite.RenderDefinition.SpriteEffect = SpriteEffects.FlipVertically;
             animatedSprite.RenderDefinition.Scale = Vector2.One * 4;
             animatedSprite.RenderDefinition.Origin = new Vector2(
@@ -135,26 +162,35 @@ namespace MonoGame
         protected override void Initialize()
         {
             base.Initialize();
+            System.Console.WriteLine("CurrentDisplayMode: " + GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.ToString());
+            System.Console.WriteLine("Render: " + _internalRenderBounds.ToString());
+            System.Console.WriteLine("Window: " + Window.ClientBounds.ToString());
+
             // Camera
             viewportAdapter = new BoxingViewportAdapter(
                 Window,
                 GraphicsDevice,
                 GraphicsDevice.PresentationParameters.BackBufferWidth,
                 GraphicsDevice.PresentationParameters.BackBufferHeight);
-            camera = new OrthographicCamera(GraphicsDevice);
+            camera = new OrthographicCamera(viewportAdapter);
 
             // Internal resolution = 4K
-            _renderTarget = new RenderTarget2D(
+            _internalRenderTarget = new RenderTarget2D(
                 GraphicsDevice,
-                3840,
-                2160);
+                (int) _internalRenderBounds.X,
+                (int) _internalRenderBounds.Y,
+                false,
+                SurfaceFormat.Color,
+                DepthFormat.None,
+                preferredMultiSampleCount: _graphics.GraphicsDevice.PresentationParameters.MultiSampleCount,
+                RenderTargetUsage.DiscardContents);
 
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
+            _spriteBatch = new SpriteBatch(_graphics.GraphicsDevice);
 
             // World
             world = new WorldBuilder()
-                .AddSystem(new RenderSystem(GraphicsDevice))
-                .AddSystem(new HUDSystem(GraphicsDevice))
+                .AddSystem(new RenderSystem(_graphics.GraphicsDevice))
+                .AddSystem(new HUDSystem(_graphics.GraphicsDevice))
                 .AddSystem(new ControllerSystem())
                 .AddSystem(new WeaponSystem())
                 .Build();
@@ -162,7 +198,7 @@ namespace MonoGame
             // Entities
             player[(int) Player.One] = world.CreateEntity();
             // texture from atlas?
-            Texture2D texture = Content.Load<Texture2D>("Sprites/ShitspriteFrames");
+            Texture2D texture = Content.Load<Texture2D>("Sprites/Shitsprite");
             player[(int) Player.One].Attach(new Extended.Sprites.Sprite(new TextureRegion2D(
                 texture,
                 0,
@@ -170,8 +206,8 @@ namespace MonoGame
                 texture.Width,
                 texture.Height)));
             player[(int) Player.One].Attach(new Transform2(new Vector2(
-                GraphicsDevice.PresentationParameters.BackBufferWidth * 0.5f,
-                GraphicsDevice.PresentationParameters.BackBufferHeight * 0.5f)));
+                _graphics.GraphicsDevice.PresentationParameters.BackBufferWidth * 0.5f,
+                _graphics.GraphicsDevice.PresentationParameters.BackBufferHeight * 0.5f)));
             player[(int) Player.One].Attach(new WeaponComponent(Weapon.None, 0));
 
             world.Initialize();
@@ -191,15 +227,18 @@ namespace MonoGame
 
             animatedSprite.Play("Walk");
             animatedSprite.Update(gameTime);
-            //animatedSprite.Play("walk");
-            //animatedSprite.Update(gameTime);
-            /*if(camera.Zoom < camera.MaximumZoom)
-                camera.ZoomIn(0.01f);
+
+            /*if(camera.Zoom < 10.0f)
+                camera.ZoomIn(0.001f);
             else camera.Zoom = 0.0f;*/
 
             var worldPosition = MonoGame.camera.ScreenToWorld(new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y));
             var direction = worldPosition - MonoGame.camera.Center;
-            _rotation = direction.ToAngle();
+            direction.Normalize();
+            rotation = direction.ToAngle();
+
+            //camera.LookAt(new Vector2(0.0f, 0.0f));
+            System.Console.WriteLine("Window: " + Window.ClientBounds.ToString());
 
             world.Update(gameTime);
 
@@ -209,37 +248,48 @@ namespace MonoGame
             previousGamePadState = gamePadState;
         }
 
+        private Rectangle FitToScreen()
+        {
+            Rectangle rectangle;
+            float preferredAspectRatio = _internalRenderBounds.X / (float) _internalRenderBounds.Y;
+            float outputAspectRatio = Window.ClientBounds.Width / (float) Window.ClientBounds.Height;
+
+            // Letter boxing
+            if(outputAspectRatio <= preferredAspectRatio)
+            {
+                int presentHeight = (int) ((Window.ClientBounds.Width / preferredAspectRatio) + 0.5f);
+                int barHeight = (Window.ClientBounds.Height - presentHeight) / 2;
+                rectangle = new Rectangle(0, barHeight, Window.ClientBounds.Width, presentHeight);
+            }
+            else
+            {
+                int presentWidth = (int) ((Window.ClientBounds.Height * preferredAspectRatio) + 0.5f);
+                int barWidth = (Window.ClientBounds.Width - presentWidth) / 2;
+                rectangle = new Rectangle(barWidth, 0, presentWidth, Window.ClientBounds.Height);
+            }
+
+            return rectangle;
+        }
+
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.SetRenderTarget(_renderTarget);
-            GraphicsDevice.Clear(Color.Black);
+            GraphicsDevice.Clear(Color.DarkSlateGray);
+            GraphicsDevice.SetRenderTarget(_internalRenderTarget);
+            GraphicsDevice.Clear(ClearOptions.Target, Color.Black, 1.0f, 0);
             world.Draw(gameTime);
             GraphicsDevice.SetRenderTarget(null);
-            viewportAdapter.Reset();
 
-
-            /*if(_rotation < System.Math.PI * 2)
-                _rotation += 0.0f;
+            /*if(rotation < System.Math.PI * 2)
+                rotation += 0.0f;
             else
-                _rotation = 0.0f;*/
+                rotation = 0.0f;*/
 
             _spriteBatch.Begin(
-                sortMode: SpriteSortMode.Deferred,
-                samplerState: SamplerState.PointClamp,
-                transformMatrix: null);
+                sortMode: SpriteSortMode.Immediate,
+                blendState: BlendState.Opaque,
+                samplerState: SamplerState.PointClamp);
 
-                _spriteBatch.Draw(
-                    texture: _renderTarget,
-                    position: camera.Center,
-                    sourceRectangle: GraphicsDevice.PresentationParameters.Bounds,
-                    color: Color.White,
-                    rotation: 0,
-                    origin: camera.Center,
-                    scale: _scale,
-                    effects: SpriteEffects.None,
-                    layerDepth: 0);
-
-                //animatedSprite.Render(_spriteBatch);
+               _spriteBatch.Draw(_internalRenderTarget, FitToScreen(), Color.White);
 ;
             _spriteBatch.End(); 
             base.Draw(gameTime);    
