@@ -1,7 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using MonoGame.Extended;
-using MonoGame.Extended.Sprites;
+using MonoGame.Aseprite;
 
 
 namespace MonoGame.Extended.Entities.Systems
@@ -9,23 +8,19 @@ namespace MonoGame.Extended.Entities.Systems
     public class RenderSystem : EntityDrawSystem
     {
         private readonly SpriteBatch _spriteBatch;
-        private GraphicsDevice _graphicsDevice;
-        private ComponentMapper<Transform2> _transformMapper;
-        private ComponentMapper<Sprite> _spriteMapper;
         private ComponentMapper<WeaponComponent> _weaponComponentMapper;
+        private ComponentMapper<AsepriteSprite> _asepriteComponentMapper;
 
         public RenderSystem(GraphicsDevice graphicsDevice)
-            : base(Aspect.All(typeof(Sprite), typeof(Transform2), typeof(WeaponComponent)))
+            : base(Aspect.All(typeof(AsepriteSprite), typeof(WeaponComponent)))
         {
             _spriteBatch = new SpriteBatch(graphicsDevice);
-            _graphicsDevice = graphicsDevice;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
         {
-            _transformMapper = mapperService.GetMapper<Transform2>();
-            _spriteMapper = mapperService.GetMapper<Sprite>();
             _weaponComponentMapper = mapperService.GetMapper<WeaponComponent>();
+            _asepriteComponentMapper = mapperService.GetMapper<AsepriteSprite>();
         }
 
         public override void Draw(GameTime gameTime)
@@ -41,17 +36,13 @@ namespace MonoGame.Extended.Entities.Systems
                 (float) -System.Math.Cos(MonoGame.rotation));
             direction.Normalize();
 
-            MonoGame.animatedSprite.RenderDefinition.Rotation = direction.ToAngle();
-            MonoGame.animatedSprite.Render(_spriteBatch);
-
             foreach(var entity in ActiveEntities)
             {
                 WeaponComponent weaponComponent = _weaponComponentMapper.Get(entity);
-                Sprite sprite = _spriteMapper.Get(entity);
-                Transform2 transform = _transformMapper.Get(entity);
+                AsepriteSprite aseprite = _asepriteComponentMapper.Get(entity);
 
-                transform.Scale = Vector2.One * 4;
-                _spriteBatch.Draw(sprite, transform);
+                aseprite.Rotation = direction.ToAngle();
+                aseprite.Render(_spriteBatch);
 
                 // LAZER
                 if(weaponComponent.isCharging)

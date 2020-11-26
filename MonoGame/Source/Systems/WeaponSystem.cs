@@ -1,9 +1,5 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Graphics;
-using MonoGame.Extended;
-using MonoGame.Extended.Sprites;
-
 
 namespace MonoGame.Extended.Entities.Systems
 {

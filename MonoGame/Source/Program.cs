@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Xna.Framework;
 
 namespace MonoGame
 {
@@ -7,7 +8,9 @@ namespace MonoGame
         [STAThread]
         static void Main(string[] args)
         {
-            bool fullscreen = false;
+            bool isFullscreen = false;
+            Point source = new Point(3840, 2160);
+            Point destination = new Point(1920, 1080);
 
             if(args.Length > 0)
             {
@@ -16,10 +19,10 @@ namespace MonoGame
                     switch(argument)
                     {
                         case "--fullscreen":
-                                fullscreen = true;
+                                isFullscreen = true;
                             break;
                         case "--windowed":
-                                fullscreen = false;
+                                isFullscreen = false;
                             break;
                         default:
                             break;
@@ -27,7 +30,10 @@ namespace MonoGame
                 }
             }
 
-            using (var game = new MonoGame(3840 / 2, 2160 / 2, fullscreen))
+            using (var game = new MonoGame(
+                source,
+                destination,
+                isFullscreen))
                 game.Run();
         }
     }

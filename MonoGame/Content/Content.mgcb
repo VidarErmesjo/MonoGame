@@ -14,6 +14,11 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin Animations/Shitsprite.json
+/importer:AsepriteImporter
+/processor:Processor
+/build:Animations/Shitsprite.json
+
 #begin Fonts/Arial.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
@@ -51,9 +56,4 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Sprites/Shitsprite.png
-
-#begin Sprites/ShitspriteAnimation.json
-/importer:AsepriteImporter
-/processor:Processor
-/build:Sprites/ShitspriteAnimation.json
 

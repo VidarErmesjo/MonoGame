@@ -1,13 +1,12 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Graphics;
-using MonoGame.Extended;
-using MonoGame.Extended.ViewportAdapters;
+using MonoGame.Aseprite;
 
 namespace MonoGame.Extended.Entities.Systems
 {
     public class ControllerSystem : EntityUpdateSystem
     {
+        private ComponentMapper<AsepriteSprite> _asepriteMapper;
         public ControllerSystem()
             : base(Aspect.All())
         {
@@ -15,6 +14,7 @@ namespace MonoGame.Extended.Entities.Systems
 
         public override void Initialize(IComponentMapperService mapperService)
         {
+            _asepriteMapper = mapperService.GetMapper<AsepriteSprite>();
         }
 
         public override void Update(GameTime gameTime)
@@ -27,7 +27,15 @@ namespace MonoGame.Extended.Entities.Systems
             direction.Normalize();
 
             if(!direction.IsNaN())
-                MonoGame.camera.Move(direction * gameTime.ElapsedGameTime.Milliseconds);   
+                MonoGame.camera.Move(direction * gameTime.ElapsedGameTime.Milliseconds);
+
+            foreach(var entity in ActiveEntities)
+            {
+                AsepriteSprite player = _asepriteMapper.Get(entity);
+                player.Play((!direction.IsNaN() ? "Walk" : "Idle"));
+                player.Position = MonoGame.camera.Center;
+                player.Update(gameTime);
+            }
         }
     }
 }
