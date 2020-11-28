@@ -7,10 +7,13 @@ namespace MonoGame.Extended.Entities.Systems
 {
     public class ControllerSystem : EntityUpdateSystem
     {
+        private readonly OrthographicCamera _camera;
         private ComponentMapper<AsepriteSprite> _asepriteMapper;
+
         public ControllerSystem()
             : base(Aspect.All(typeof(AsepriteSprite)))
         {
+            _camera = Globals.Viewport.Camera;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
@@ -20,22 +23,24 @@ namespace MonoGame.Extended.Entities.Systems
 
         public override void Update(GameTime gameTime)
         {
-            var direction = new Vector2(0.0f, 0.0f);
-            direction.X = MonoGame.keyboardState.IsKeyDown(Keys.Left) ? -1.0f :
-                MonoGame.keyboardState.IsKeyDown(Keys.Right) ? 1.0f : 0.0f;  
-            direction.Y = MonoGame.keyboardState.IsKeyDown(Keys.Up) ? -1.0f :
-                MonoGame.keyboardState.IsKeyDown(Keys.Down) ? 1.0f : 0.0f;  
+            KeyboardState keyboardState = Globals.Input.KeyboardState;
+
+            Vector2 direction = new Vector2(0.0f, 0.0f);
+            direction.X = keyboardState.IsKeyDown(Keys.Left) ? -1.0f :
+                keyboardState.IsKeyDown(Keys.Right) ? 1.0f : 0.0f;  
+            direction.Y = keyboardState.IsKeyDown(Keys.Up) ? -1.0f :
+                keyboardState.IsKeyDown(Keys.Down) ? 1.0f : 0.0f;  
             direction.Normalize();
 
             if(!direction.IsNaN())
-                MonoGame.camera.Move(direction * gameTime.ElapsedGameTime.Milliseconds);
+                _camera.Move(direction * gameTime.ElapsedGameTime.Milliseconds);
 
             foreach(var entity in ActiveEntities)
             {
                 AsepriteSprite player = _asepriteMapper.Get(entity);
                 player.SpriteEffect = SpriteEffects.FlipVertically;
                 player.Play((!direction.IsNaN() ? "Walk" : "Idle"));
-                player.Position = MonoGame.camera.Center;
+                player.Position = _camera.Center;
                 player.Update(gameTime);
             }
         }

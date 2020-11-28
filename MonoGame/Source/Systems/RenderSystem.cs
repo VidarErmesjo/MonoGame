@@ -8,15 +8,15 @@ namespace MonoGame.Extended.Entities.Systems
     public class RenderSystem : EntityDrawSystem
     {
         private readonly SpriteBatch _spriteBatch;
-        private readonly GraphicsDevice _graphicsDevice;
+        private readonly OrthographicCamera _camera;
         private ComponentMapper<WeaponComponent> _weaponComponentMapper;
         private ComponentMapper<AsepriteSprite> _asepriteComponentMapper;
 
-        public RenderSystem(GraphicsDevice graphicsDevice)
+        public RenderSystem()
             : base(Aspect.All(typeof(AsepriteSprite), typeof(WeaponComponent)))
         {
-            _spriteBatch = new SpriteBatch(graphicsDevice);
-            _graphicsDevice = graphicsDevice;
+            _spriteBatch = new SpriteBatch(Globals.GraphicsDeviceManager.GraphicsDevice);
+            _camera = Globals.Viewport.Camera;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
@@ -31,7 +31,7 @@ namespace MonoGame.Extended.Entities.Systems
                 sortMode: SpriteSortMode.Deferred,
                 blendState: BlendState.NonPremultiplied,
                 samplerState: SamplerState.PointClamp,
-                transformMatrix: MonoGame.camera.GetViewMatrix());
+                transformMatrix: _camera.GetViewMatrix());
 
             var direction = new Vector2(
                 (float) System.Math.Sin(MonoGame.rotation),

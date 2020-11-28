@@ -6,14 +6,12 @@ namespace MonoGame.Extended.Entities.Systems
     public class WeatherSystem : EntityDrawSystem
     {
         private readonly SpriteBatch _spriteBatch;
-        private readonly GraphicsDevice _graphicsDevice;
         private ComponentMapper<RaindropComponent> _raindropComponentMapper;
 
-        public WeatherSystem(GraphicsDevice graphicsDevice)
+        public WeatherSystem()
             : base(Aspect.All(typeof(RaindropComponent)))
         {
-            _spriteBatch = new SpriteBatch(graphicsDevice);
-            _graphicsDevice = graphicsDevice;
+            _spriteBatch = new SpriteBatch(Globals.GraphicsDeviceManager.GraphicsDevice);
         }
 
         public override void Initialize(IComponentMapperService mapperService)
@@ -24,6 +22,7 @@ namespace MonoGame.Extended.Entities.Systems
         public override void Draw(GameTime gameTime)
         {
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+
             foreach(var entity in ActiveEntities)
             {
                 RaindropComponent raindropComponent = _raindropComponentMapper.Get(entity);

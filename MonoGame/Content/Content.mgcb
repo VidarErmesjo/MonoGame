@@ -33,9 +33,6 @@
 /processorParam:TextureFormat=Compressed
 /build:Fonts/Consolas.spritefont
 
-#begin Sequences/Unique.txt
-/copy:Sequences/Unique.txt
-
 #begin Sprites/Compass.png
 /importer:TextureImporter
 /processor:TextureProcessor

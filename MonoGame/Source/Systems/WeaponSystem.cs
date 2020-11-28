@@ -5,11 +5,13 @@ namespace MonoGame.Extended.Entities.Systems
 {
     public class WeaponSystem : EntityUpdateSystem
     {
+        private readonly OrthographicCamera _camera;
         private ComponentMapper<WeaponComponent> _componentMapper;
 
         public WeaponSystem()
             : base(Aspect.All(typeof(WeaponComponent)))
         {
+            _camera = Globals.Viewport.Camera;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
@@ -19,10 +21,12 @@ namespace MonoGame.Extended.Entities.Systems
 
         public override void Update(GameTime gameTime)
         {
+            MouseState mouseState = Globals.Input.MouseState;
+
             foreach(var entity in ActiveEntities)
             {
                 var component = _componentMapper.Get(entity);
-                if(MonoGame.mouseState.LeftButton == ButtonState.Pressed)
+                if(mouseState.LeftButton == ButtonState.Pressed)
                 {
                     if(!component.isCharging)
                     {
@@ -35,8 +39,11 @@ namespace MonoGame.Extended.Entities.Systems
                         if(component.charge > 255.0f)
                             component.charge = 255.0f;  
 
-                        component.origin = MonoGame.camera.Center;
-                        component.destination = MonoGame.camera.ScreenToWorld(new Vector2(MonoGame.mouseState.X, MonoGame.mouseState.Y));
+                        component.origin = _camera.Center;
+                        component.destination = _camera.ScreenToWorld(
+                            new Vector2(
+                                mouseState.X,
+                                mouseState.Y));
                     }
                 }
                 else
