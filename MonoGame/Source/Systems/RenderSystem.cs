@@ -8,6 +8,7 @@ namespace MonoGame.Extended.Entities.Systems
     public class RenderSystem : EntityDrawSystem
     {
         private readonly SpriteBatch _spriteBatch;
+        private readonly GraphicsDevice _graphicsDevice;
         private ComponentMapper<WeaponComponent> _weaponComponentMapper;
         private ComponentMapper<AsepriteSprite> _asepriteComponentMapper;
 
@@ -15,6 +16,7 @@ namespace MonoGame.Extended.Entities.Systems
             : base(Aspect.All(typeof(AsepriteSprite), typeof(WeaponComponent)))
         {
             _spriteBatch = new SpriteBatch(graphicsDevice);
+            _graphicsDevice = graphicsDevice;
         }
 
         public override void Initialize(IComponentMapperService mapperService)

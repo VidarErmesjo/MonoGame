@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
+using MonoGame.Extended;
 
 namespace MonoGame
 {
@@ -9,8 +10,8 @@ namespace MonoGame
         static void Main(string[] args)
         {
             bool isFullscreen = false;
-            Point source = new Point(3840, 2160);
-            Point destination = new Point(1920, 1080);
+            Size virtualResolution = new Size(3840, 2160);
+            Size deviceResolution = new Size(1920, 1080);
 
             if(args.Length > 0)
             {
@@ -31,8 +32,8 @@ namespace MonoGame
             }
 
             using (var game = new MonoGame(
-                source,
-                destination,
+                virtualResolution,
+                deviceResolution,
                 isFullscreen))
                 game.Run();
         }

@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Aseprite;
 
 namespace MonoGame.Extended.Entities.Systems
@@ -8,7 +9,7 @@ namespace MonoGame.Extended.Entities.Systems
     {
         private ComponentMapper<AsepriteSprite> _asepriteMapper;
         public ControllerSystem()
-            : base(Aspect.All())
+            : base(Aspect.All(typeof(AsepriteSprite)))
         {
         }
 
@@ -32,6 +33,7 @@ namespace MonoGame.Extended.Entities.Systems
             foreach(var entity in ActiveEntities)
             {
                 AsepriteSprite player = _asepriteMapper.Get(entity);
+                player.SpriteEffect = SpriteEffects.FlipVertically;
                 player.Play((!direction.IsNaN() ? "Walk" : "Idle"));
                 player.Position = MonoGame.camera.Center;
                 player.Update(gameTime);

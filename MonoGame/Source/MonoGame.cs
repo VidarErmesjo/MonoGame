@@ -16,12 +16,11 @@ namespace MonoGame
     public class MonoGame: Game
     {
         // Graphics
-        private GraphicsDeviceManager _graphicsDeviceManager;
-        private readonly Point _internalRenderBounds;
-        private RenderTarget2D _internalRenderTarget { get; set; }
+        private readonly GraphicsDeviceManager _graphics;
+        private readonly Size _virtualResolution;
+        private RenderTarget2D _primaryRenderTarget { get; set; }
         private SpriteBatch _spriteBatch { get; set; }
 
-        public static ContentManager content { get; private set; }
         public static ViewportAdapter viewportAdapter { get; private set; }
 
         // Input
@@ -32,9 +31,9 @@ namespace MonoGame
         public static GamePadState gamePadState { get; private set; }
         public static GamePadState previousGamePadState { get; private set; }
 
-        // Fonts
-        public static IDictionary<string, SpriteFont> spriteFonts { get; private set; }
- 
+        // Weather
+        public static float WindSpeed = -0.1f;
+
         // Animation test
         public static AsepriteSprite arrowSprite;
 
@@ -65,31 +64,30 @@ namespace MonoGame
             Four
         }
 
-        public MonoGame(Point source, Point destination, bool fullscreen)
+        public MonoGame(Size virtualResolution = default(Size), Size deviceResolution = default(Size), bool fullscreen = true)
         {
-            _graphicsDeviceManager = new GraphicsDeviceManager(this);
+            _graphics = new GraphicsDeviceManager(this);
             if(fullscreen)
             {
-                _graphicsDeviceManager.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
-                _graphicsDeviceManager.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
-                _graphicsDeviceManager.IsFullScreen = true;
+                _graphics.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
+                _graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+                _graphics.IsFullScreen = true;
             }
             else
             {
-                _graphicsDeviceManager.PreferredBackBufferWidth = destination.X;
-                _graphicsDeviceManager.PreferredBackBufferHeight = destination.Y;
+                _graphics.PreferredBackBufferWidth = deviceResolution.Width;
+                _graphics.PreferredBackBufferHeight = deviceResolution.Height;
             }
 
-            _internalRenderBounds = source;
+            _virtualResolution = virtualResolution;
             
             Window.AllowUserResizing = true;
 
             IsFixedTimeStep = true;            
-            _graphicsDeviceManager.SynchronizeWithVerticalRetrace = true;
-            _graphicsDeviceManager.ApplyChanges();
+            _graphics.SynchronizeWithVerticalRetrace = true;
+            _graphics.ApplyChanges();
 
             Content.RootDirectory = "Content";
-            content = Content;
 
             // Input
             mouseState = new MouseState();
@@ -104,23 +102,18 @@ namespace MonoGame
             // Stuffz
             player = new Entity[4];
 
-            spriteFonts = new Dictionary<string, SpriteFont>();
+            Globals.Initialize(this, virtualResolution, deviceResolution);
         }
 
         protected override void Dispose(bool disposing)
         {
             if(disposing)
             {
-                _internalRenderTarget.Dispose();
-                _internalRenderTarget = null;
+                _primaryRenderTarget.Dispose();
                 _spriteBatch.Dispose();
-                _spriteBatch = null;
-                _graphicsDeviceManager.Dispose();
-                _graphicsDeviceManager = null;
+                _graphics.Dispose();
                 viewportAdapter.Dispose();
-                viewportAdapter = null;
                 world.Dispose();
-                world = null;
             }
 
             base.Dispose(disposing);
@@ -132,17 +125,14 @@ namespace MonoGame
 
             // HUD components
             arrowSprite = new AsepriteSprite("Compass");
-            arrowSprite.Position = _internalRenderBounds.ToVector2() * 0.5f;
+            arrowSprite.Position = new Vector2(_virtualResolution.Width, _virtualResolution.Height) * 0.5f;
             arrowSprite.Scale = 0.032f;
             arrowSprite.Origin = new Vector2(
-                arrowSprite.Texture().Width * 0.5f,
-                arrowSprite.Texture().Height * 0.5f);
+                arrowSprite.Rectangle.Width * 0.5f,
+                arrowSprite.Rectangle.Height * 0.5f);
             arrowSprite.SpriteEffect = SpriteEffects.FlipVertically;
 
             aseprite = new AsepriteSprite("Shitsprite");
-            aseprite.Play("Walk");
-            aseprite.Position = Vector2.One * 100;
-            aseprite.Scale = 4.0f;
             aseprite.SpriteEffect = SpriteEffects.FlipVertically;
 
             base.LoadContent();
@@ -155,37 +145,38 @@ namespace MonoGame
             // Camera
             viewportAdapter = new BoxingViewportAdapter(
                 Window,
-                _graphicsDeviceManager.GraphicsDevice,
-                _internalRenderBounds.X,
-                _internalRenderBounds.Y);
+                _graphics.GraphicsDevice,
+                _virtualResolution.Width,
+                _virtualResolution.Height);
             camera = new OrthographicCamera(viewportAdapter);
 
-            _internalRenderTarget = new RenderTarget2D(
-                _graphicsDeviceManager.GraphicsDevice,
-                _internalRenderBounds.X,
-                _internalRenderBounds.Y,
+            _primaryRenderTarget = new RenderTarget2D(
+                _graphics.GraphicsDevice,
+                _virtualResolution.Width,
+                _virtualResolution.Height,
                 false,
                 SurfaceFormat.Color,
                 DepthFormat.None,
-                preferredMultiSampleCount: _graphicsDeviceManager.GraphicsDevice.PresentationParameters.MultiSampleCount,
+                preferredMultiSampleCount: _graphics.GraphicsDevice.PresentationParameters.MultiSampleCount,
                 RenderTargetUsage.DiscardContents);
 
-            _spriteBatch = new SpriteBatch(_graphicsDeviceManager.GraphicsDevice);
+            _spriteBatch = new SpriteBatch(_graphics.GraphicsDevice);
 
             // World
             world = new WorldBuilder()
-                .AddSystem(new RenderSystem(_graphicsDeviceManager.GraphicsDevice))
-                .AddSystem(new HUDSystem(_graphicsDeviceManager.GraphicsDevice))
+                .AddSystem(new RenderSystem(_graphics.GraphicsDevice))
+                .AddSystem(new WeatherSystem(_graphics.GraphicsDevice))
+                .AddSystem(new HUDSystem(_graphics.GraphicsDevice))
                 .AddSystem(new ControllerSystem())
                 .AddSystem(new WeaponSystem())
+                .AddSystem(new ExpirySystem())
+                .AddSystem(new RainfallSystem())
                 .Build();
+            Components.Add(world);
 
             // Entities
             player[(int) Player.One] = world.CreateEntity();
-            player[(int) Player.One].Attach(aseprite);
-            player[(int) Player.One].Attach(new Transform2(new Vector2(
-                camera.Center.X,
-                camera.Center.Y)));
+            player[(int) Player.One].Attach(new AsepriteSprite("Shitsprite"));
             player[(int) Player.One].Attach(new WeaponComponent(Weapon.None, 0));
 
             world.Initialize();
@@ -222,7 +213,7 @@ namespace MonoGame
         private Rectangle FitToScreen()
         {
             Rectangle destinationRectangle;
-            float preferredAspectRatio = _internalRenderBounds.X / (float) _internalRenderBounds.Y;
+            float preferredAspectRatio = _virtualResolution.Width / (float) _virtualResolution.Height;
             float outputAspectRatio = Window.ClientBounds.Width / (float) Window.ClientBounds.Height;
 
             if(outputAspectRatio == preferredAspectRatio)
@@ -249,19 +240,19 @@ namespace MonoGame
 
         protected override void Draw(GameTime gameTime)
         {
-            _graphicsDeviceManager.GraphicsDevice.Clear(Color.DarkSlateGray);
+            _graphics.GraphicsDevice.Clear(Color.DarkSlateGray);
 
-            _graphicsDeviceManager.GraphicsDevice.SetRenderTarget(_internalRenderTarget);
-            _graphicsDeviceManager.GraphicsDevice.Clear(ClearOptions.Target, Color.Black, 1.0f, 0);
+            _graphics.GraphicsDevice.SetRenderTarget(_primaryRenderTarget);
+            _graphics.GraphicsDevice.Clear(ClearOptions.Target, Color.Black, 1.0f, 0);
             world.Draw(gameTime);
-            _graphicsDeviceManager.GraphicsDevice.SetRenderTarget(null);
+            _graphics.GraphicsDevice.SetRenderTarget(null);
 
             _spriteBatch.Begin(
                 sortMode: SpriteSortMode.Immediate,
                 blendState: BlendState.Opaque,
                 samplerState: SamplerState.PointClamp);
 
-               _spriteBatch.Draw(_internalRenderTarget, FitToScreen(), Color.White);
+               _spriteBatch.Draw(_primaryRenderTarget, FitToScreen(), Color.White);
 ;
             _spriteBatch.End(); 
             base.Draw(gameTime);    

@@ -14,12 +14,13 @@ namespace MonoGame.Aseprite
     {
         private readonly Dictionary<string, List<Rectangle>> _animations;
         private readonly AsepriteData _asepriteData;
-        private Texture2D _currentTexture { get; set; }
-        private Rectangle _currentSource { get; set; }
+        private Color[,] _pixelMap { get; set; }
         private string _currentAnimation { get; set; }
         private int _currentFrame { get; set; }
         private bool _isAnimated = false;
 
+        public Texture2D Texture { get; private set; }
+        public Rectangle Rectangle { get; private set; }
         public Vector2 Position { get; set; }
         public Vector2 Origin { get; set; }
         public float Scale { get; set; }
@@ -28,10 +29,17 @@ namespace MonoGame.Aseprite
 
         public AsepriteSprite(string name)
         {
-            if(name.Split('/').Length > 1)
-                throw new System.ArgumentException("AsepriteSprite.Length > 1");
+            name = name.Replace('\\', '/').Split('/').Last().Split('.').First();
+            Texture = Assets.Texture(name);
 
-            _currentTexture = Assets.Texture(name);//name.Split('/').Last());
+            Color[] colors = new Color[Texture.Width * Texture.Height];
+            Texture.GetData<Color>(colors);
+
+            _pixelMap = new Color[Texture.Width, Texture.Height];
+            for(int y = 0; y < Texture.Height; y++)
+                for(int x = 0; x < Texture.Width; x++)
+                    _pixelMap[x, y] = colors[x + y * Texture.Width];
+
             Position = new Vector2(0.0f, 0.0f);
             Rotation = 0.0f;
             SpriteEffect = SpriteEffects.None;
@@ -45,7 +53,7 @@ namespace MonoGame.Aseprite
                 if(_asepriteData.meta.frameTags.Count > 0)
                     _isAnimated = true;
 
-                _currentSource = new Rectangle(
+                Rectangle = new Rectangle(
                     0,
                     0,
                     _asepriteData.frames[0].sourceSize.w,
@@ -61,25 +69,24 @@ namespace MonoGame.Aseprite
             {
                 _isAnimated = false;
 
-                _currentSource = new Rectangle(
+                Rectangle = new Rectangle(
                     0,
                     0,
-                    _currentTexture.Width,
-                    _currentTexture.Height);
+                    Texture.Width,
+                    Texture.Height);
 
                 Origin = new Vector2(
-                    _currentTexture.Width * 0.5f,
-                    _currentTexture.Height * 0.5f);
+                    Texture.Width * 0.5f,
+                    Texture.Height * 0.5f);
 
                 Scale = 1.0f;
+
                 return;
-                //throw new FileLoadException(e.Message);
             }
 
             var frames = new Dictionary<int, Rectangle>();
             int index = 0;
             for(int y = 0; y < _asepriteData.meta.size.h; y += _asepriteData.frames[0].sourceSize.h)
-            {
                 for(int x = 0; x < _asepriteData.meta.size.w; x += _asepriteData.frames[0].sourceSize.w)
                 {
                     Rectangle source = new Rectangle(
@@ -87,45 +94,47 @@ namespace MonoGame.Aseprite
                         y,
                         _asepriteData.frames[0].sourceSize.w,
                         _asepriteData.frames[0].sourceSize.h);
+                        
                     frames.Add(index, source);
-
-                    /*Color[] pixels = new Color[source.Width * source.Height];
-                    _currentTexture.GetData<Color>(0, source, pixels, 0, pixels.Length);
-
-                    // Maybe store all frames as RGBA arrays?
-                    Texture2D texture = new Texture2D(graphics, source.Width, source.Height);
-                    texture.SetData<Color>(pixels);
-                    frames.Add(index, texture);*/
                     index++;
                 }
-            }
 
             _animations = new Dictionary<string, List<Rectangle>>();
             foreach(var frameTag in _asepriteData.meta.frameTags.ToArray())
             {
-                //System.Console.WriteLine("name: {0}, from: {1}, to: {2}", frameTag.name, frameTag.from, frameTag.to);
                 List<Rectangle> rectangles = new List<Rectangle>();
                 for(int i = frameTag.from; i <= frameTag.to; i++)
                 {
                     rectangles.Add(frames[i]);
                 }
+
                 _animations.Add(frameTag.name, rectangles);
            }
         }
 
-        public Texture2D Texture()
+        public Color[] Frame()
         {
-            return _currentTexture;
+            Color[] colors = new Color[Rectangle.Width * Rectangle.Height];
+
+            int index = 0;
+            for(int y = Rectangle.Y; y < Rectangle.Y + Rectangle.Height; y++)
+                for(int x = Rectangle.X; x < Rectangle.X + Rectangle.Width; x++)
+                {
+                    colors[index] = _pixelMap[x, y];
+                    index++;
+                }
+
+            return colors;
         }
 
         public void Play(string name)
         {
             if(!_isAnimated)
                 return;
-            if(string.IsNullOrEmpty(name))
-                throw new System.NullReferenceException("Can not be null!");
 
-            _currentAnimation = name;
+            _currentAnimation = string.IsNullOrWhiteSpace(name) ?
+                _asepriteData.meta.frameTags[0].name : name;
+
             _currentFrame = _currentAnimation == name ? _currentFrame : 0;
         }
 
@@ -137,15 +146,16 @@ namespace MonoGame.Aseprite
 
             if(_currentFrame > _animations[_currentAnimation].ToArray().Length - 1)
                 _currentFrame = 0;
+
+            Rectangle = _animations[_currentAnimation].ToArray().ElementAt(_currentFrame);
         }
 
         public void Render(SpriteBatch spriteBatch)
         {
-            _currentSource = _animations[_currentAnimation].ToArray().ElementAt(_currentFrame);
             spriteBatch.Draw(
-                texture: _currentTexture,
+                texture: Texture,
                 position: Position,
-                sourceRectangle: _currentSource,
+                sourceRectangle: Rectangle,
                 color: Color.White,
                 rotation: Rotation,
                 origin: Origin,

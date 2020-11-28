@@ -56,7 +56,12 @@ namespace MonoGame
                     content.RootDirectory);
 
                 Count++;
-                System.Console.WriteLine("Asset #{0} loaded: {1}", Count, asset.Split('/').Last());            
+                System.Console.WriteLine(
+                    "Asset #{0} loaded: {1} ({2})",
+                    Count,
+                    asset.Split('/').Last(),
+                    asset.Split('/').First());    
+                            
                 tmp.Add(asset.Split('/').Last(), content.Load<T>(asset));
             }
 

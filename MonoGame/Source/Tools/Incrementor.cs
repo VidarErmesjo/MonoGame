@@ -2,7 +2,7 @@ namespace MonoGame.Tools
 {
     public class Incrementor
     {
-        private static int _count;
+        private int _count;
 
         public Incrementor(int count = 0)
         {

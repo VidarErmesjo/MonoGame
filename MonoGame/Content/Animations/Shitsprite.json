@@ -15,7 +15,7 @@
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
     "sourceSize": { "w": 16, "h": 16 },
-    "duration": 100
+    "duration": 300
    },
    {
     "filename": "Shitsprite_idle 2.ase",
@@ -33,7 +33,7 @@
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
     "sourceSize": { "w": 16, "h": 16 },
-    "duration": 100
+    "duration": 300
    }
  ],
  "meta": {
@@ -42,7 +42,7 @@
   "image": "Shitsprite.png",
   "format": "RGBA8888",
   "size": { "w": 64, "h": 16 },
-  "scale": "1",
+  "scale": "4",
   "frameTags": [
    { "name": "Walk", "from": 0, "to": 3, "direction": "forward" },
    { "name": "Idle", "from": 0, "to": 0, "direction": "forward" }
