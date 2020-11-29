@@ -11,7 +11,7 @@ namespace MonoGame.Extended.Entities.Systems
         public WeaponSystem()
             : base(Aspect.All(typeof(WeaponComponent)))
         {
-            _camera = Globals.Viewport.Camera;
+            _camera = Core.Camera;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
@@ -21,7 +21,7 @@ namespace MonoGame.Extended.Entities.Systems
 
         public override void Update(GameTime gameTime)
         {
-            MouseState mouseState = Globals.Input.MouseState;
+            MouseState mouseState = Core.MouseState;
 
             foreach(var entity in ActiveEntities)
             {

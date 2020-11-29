@@ -13,7 +13,7 @@ namespace MonoGame.Extended.Entities.Systems
         public ControllerSystem()
             : base(Aspect.All(typeof(AsepriteSprite)))
         {
-            _camera = Globals.Viewport.Camera;
+            _camera = Core.Camera;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
@@ -23,7 +23,7 @@ namespace MonoGame.Extended.Entities.Systems
 
         public override void Update(GameTime gameTime)
         {
-            KeyboardState keyboardState = Globals.Input.KeyboardState;
+            KeyboardState keyboardState = Core.KeyboardState;
 
             Vector2 direction = new Vector2(0.0f, 0.0f);
             direction.X = keyboardState.IsKeyDown(Keys.Left) ? -1.0f :

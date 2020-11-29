@@ -6,10 +6,11 @@ namespace MonoGame.Extended.Entities.Systems
     public class RainfallSystem : EntityUpdateSystem
     {
         private readonly FastRandom _random;
+        private readonly OrthographicCamera _camera;
         private ComponentMapper<RaindropComponent> _raindropComponent;
         private ComponentMapper<ExpiryComponent> _expiryComponent;
 
-        private readonly float VelocityOfRaindrop = Globals.Units.MetersPerScreen.Height / 9f;
+        private readonly float VelocityOfRaindrop = Core.MetersPerScreen.Height / 9f;
 
         private const float MinSpawnDelay = 0.0f;
         private const float MaxSpawnDelay = 0.0f;
@@ -18,6 +19,7 @@ namespace MonoGame.Extended.Entities.Systems
         public RainfallSystem() : base(Aspect.All(typeof(RaindropComponent)))
         {
             _random = new FastRandom();
+            _camera = Core.Camera;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
@@ -35,15 +37,18 @@ namespace MonoGame.Extended.Entities.Systems
             {
                 RaindropComponent raindropComponent = _raindropComponent.Get(entity);
 
-                raindropComponent.Velocity = new Vector2(MonoGame.WindSpeed, VelocityOfRaindrop);
-                raindropComponent.Position += raindropComponent.Velocity;
+                raindropComponent.Velocity = new Vector2(0, 500);// * elapsedSeconds;
+                raindropComponent.Position += raindropComponent.Velocity * elapsedSeconds;
 
-                if(raindropComponent.Position.Y >= impactPosition && !_expiryComponent.Has(entity))
-                {
+                if(!_expiryComponent.Has(entity))
+                {System.Console.WriteLine("HI");
                     for(int i = 0; i < 5; i++)
                     {
-                        Vector2 velocity = new Vector2(_random.NextSingle(-100, 100), -raindropComponent.Velocity.Y * _random.NextSingle(0.1f, 0.2f));
-                        int id = CreateRaindrop(raindropComponent.Position.SetY(impactPosition), velocity, (i + 1) * 0.5f);
+                        Vector2 velocity = new Vector2(
+                            _random.NextSingle(-100, 100),
+                            -raindropComponent.Velocity.Y * _random.NextSingle(0.1f, 0.2f));
+                        int id = CreateRaindrop(
+                            raindropComponent.Position.SetY(_random.NextSingle(0, 2160)), velocity, (i + 1) * 0.5f);
                         _expiryComponent.Put(id, new ExpiryComponent(1f));
                     }
 
@@ -55,10 +60,14 @@ namespace MonoGame.Extended.Entities.Systems
 
             if(_spawnDelay <= 0)
             {
-                for(int q = 0; q < 1; q++)
+                for(int q = 0; q < 10; q++)
                 {
-                    Vector2 position = new Vector2(_random.NextSingle(0, 3840), 0f);//;_random.NextSingle(-240, -480));
-                    CreateRaindrop(position);
+                    Vector2 position = new Vector2(_random.NextSingle(0, Core.VirtualResolution.Width * 2f), 0f);
+                    int id = CreateRaindrop(position);
+                    _expiryComponent.Put(
+                        id,
+                        new ExpiryComponent(
+                            _random.NextSingle(0, Core.VirtualResolution.Height*0.5f) * Core.MetersPerPixel / VelocityOfRaindrop));
                 }
                 
                 _spawnDelay = _random.NextSingle(MinSpawnDelay, MaxSpawnDelay);
@@ -71,7 +80,7 @@ namespace MonoGame.Extended.Entities.Systems
             entity.Attach(
                 new RaindropComponent
                 { 
-                    Position = position,
+                    Position = position + _camera.Position,
                     Velocity = velocity,
                     Size = size 
                 });

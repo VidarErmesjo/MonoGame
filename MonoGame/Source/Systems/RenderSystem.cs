@@ -15,8 +15,8 @@ namespace MonoGame.Extended.Entities.Systems
         public RenderSystem()
             : base(Aspect.All(typeof(AsepriteSprite), typeof(WeaponComponent)))
         {
-            _spriteBatch = new SpriteBatch(Globals.GraphicsDeviceManager.GraphicsDevice);
-            _camera = Globals.Viewport.Camera;
+            _spriteBatch = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
+            _camera = Core.Camera;
         }
 
         public override void Initialize(IComponentMapperService mapperService)

@@ -15,10 +15,10 @@ namespace MonoGame.Extended.Entities.Systems
         public HUDSystem()
             : base(Aspect.All())
         {
-            _spriteBatch = new SpriteBatch(Globals.GraphicsDeviceManager.GraphicsDevice);
+            _spriteBatch = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
             _spriteFont = Assets.Font("Consolas");
-            _camera = Globals.Viewport.Camera;
-            _viewportAdapter = (BoxingViewportAdapter) Globals.Viewport.ViewportAdapter;
+            _camera = Core.Camera;
+            _viewportAdapter = Core.ViewportAdapter;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
@@ -30,7 +30,7 @@ namespace MonoGame.Extended.Entities.Systems
             WeaponComponent weaponComponent;
             weaponComponent = MonoGame.player[(int) MonoGame.Player.One].Get<WeaponComponent>();
 
-            MouseState mouseState = Globals.Input.MouseState;
+            MouseState mouseState = Core.MouseState;
 
             var direction = new Vector2(
                 (float) System.Math.Sin(MonoGame.rotation),

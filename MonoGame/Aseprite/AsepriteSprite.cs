@@ -1,8 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Content;
-using MonoGame.Extended;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,8 +8,10 @@ using Newtonsoft.Json;
 
 namespace MonoGame.Aseprite
 {
-    public class AsepriteSprite
+    public class AsepriteSprite : IDisposable
     {
+        private bool isDisposing = false;
+
         private readonly Dictionary<string, List<Rectangle>> _animations;
         private readonly AsepriteData _asepriteData;
         private Color[,] _pixelMap { get; set; }
@@ -163,6 +163,32 @@ namespace MonoGame.Aseprite
                 effects: SpriteEffect,
                 layerDepth: 0
             );
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if(isDisposing)
+                return;
+
+            if(disposing)
+            {
+                System.Console.WriteLine(Texture.Name + " disposed");
+                Texture.Dispose();
+
+            }
+
+            isDisposing = true;
+        }
+
+        ~AsepriteSprite()
+        {
+            Dispose(false);
         }
     }
 }
