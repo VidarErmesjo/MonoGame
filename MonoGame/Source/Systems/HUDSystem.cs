@@ -10,10 +10,9 @@ namespace MonoGame.Extended.Entities.Systems
         private readonly SpriteBatch _spriteBatch;
         private readonly SpriteFont _spriteFont;
         private readonly OrthographicCamera _camera;
-        private readonly BoxingViewportAdapter _viewportAdapter;
+        private readonly ViewportAdapter _viewportAdapter;
 
-        public HUDSystem()
-            : base(Aspect.All())
+        public HUDSystem() : base(Aspect.All())
         {
             _spriteBatch = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
             _spriteFont = Assets.Font("Consolas");
@@ -41,72 +40,123 @@ namespace MonoGame.Extended.Entities.Systems
                 sortMode: SpriteSortMode.Deferred,
                 blendState: BlendState.AlphaBlend,
                 samplerState: SamplerState.PointClamp,
-                transformMatrix: _viewportAdapter.GetScaleMatrix());
+                transformMatrix: _viewportAdapter.GetScaleMatrix() * Core.ScaleToDevice);
 
                 _spriteBatch.DrawString(
                     _spriteFont,
                     "TotalGameTime: " + gameTime.TotalGameTime.ToString(),
                     new Vector2(0.0f, 0.0f),
-                    Color.White);
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    Core.ScaleToDevice,
+                    SpriteEffects.None,
+                    0);
 
                 _spriteBatch.DrawString(
                     _spriteFont,
                     "FPS: " + (1 / (float) gameTime.ElapsedGameTime.TotalSeconds).ToString("0"),
-                    new Vector2(0.0f, _spriteFont.LineSpacing),
-                    Color.White);
+                    new Vector2(0.0f, _spriteFont.LineSpacing * Core.ScaleToDevice),
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    Core.ScaleToDevice,
+                    SpriteEffects.None,
+                    0);
 
                 _spriteBatch.DrawString(
                     _spriteFont,
                     "ActiveEntities: " + ActiveEntities.Count,
-                    new Vector2(0.0f, _spriteFont.LineSpacing * 2),
-                    Color.White);
+                    new Vector2(0.0f, _spriteFont.LineSpacing * Core.ScaleToDevice * 2),
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    Core.ScaleToDevice,
+                    SpriteEffects.None,
+                    0);
 
                 _spriteBatch.DrawString(
                     _spriteFont,
-                    "Camera: " + _camera.Position.X.ToString("0") + ", " + _camera.Position.Y.ToString("0"),
-                    new Vector2(0.0f, _spriteFont.LineSpacing * 3),
-                    Color.White);
+                    "Camera: " + _camera.Position.X.ToString("0") + ", " + _camera.Position.Y.ToString("0") + ", " + _camera.Zoom.ToString("0"),
+                    new Vector2(0.0f, _spriteFont.LineSpacing * Core.ScaleToDevice * 3),
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    Core.ScaleToDevice,
+                    SpriteEffects.None,
+                    0);
 
+                var pointToScreen = Core.ViewportAdapter.PointToScreen(new Point(mouseState.X, mouseState.Y));
                 _spriteBatch.DrawString(
                     _spriteFont,
-                    "Cursor: " + mouseState.X.ToString("0") + ", " + mouseState.Y.ToString("0"),
-                    new Vector2(0.0f, _spriteFont.LineSpacing * 4),
-                    Color.White);
+                    "Cursor: " + pointToScreen.X.ToString("0") + ", " + pointToScreen.Y.ToString("0"),
+                    new Vector2(0.0f, _spriteFont.LineSpacing * Core.ScaleToDevice * 4),
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    Core.ScaleToDevice,
+                    SpriteEffects.None,
+                    0);
 
-                var screenToWorld = _camera.ScreenToWorld(Vector2.One * mouseState.Position.ToVector2());
+                var screenToWorld = _camera.ScreenToWorld(mouseState.Position.ToVector2());
                 _spriteBatch.DrawString(
                     _spriteFont,
                     "ScreenToWorld(): " + screenToWorld.X.ToString("0") + ", " + screenToWorld.Y.ToString("0"),
-                    new Vector2(0.0f, _spriteFont.LineSpacing * 5),
-                    Color.White);
+                    new Vector2(0.0f, _spriteFont.LineSpacing * Core.ScaleToDevice * 5),
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    Core.ScaleToDevice,
+                    SpriteEffects.None,
+                    0);
 
-                var worldToScreen = _camera.WorldToScreen(Vector2.One * mouseState.Position.ToVector2());
+                var worldToScreen = _camera.WorldToScreen(MonoGame.aseprite.Position);
                 _spriteBatch.DrawString(
                     _spriteFont,
-                    "WorldToScreen(): " + worldToScreen.X.ToString("0") + ", " + worldToScreen.Y.ToString("0"),
-                    new Vector2(0.0f, _spriteFont.LineSpacing * 6),
-                    Color.White);
+                    "Player: " + worldToScreen.X.ToString("0") + ", " + worldToScreen.Y.ToString("0"),
+                    new Vector2(0.0f, _spriteFont.LineSpacing * Core.ScaleToDevice * 6),
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    Core.ScaleToDevice,
+                    SpriteEffects.None,
+                    0);
 
                 _spriteBatch.DrawString(
                     _spriteFont,
                     "Direction: " + direction.X.ToString("0.0000") + ", " + direction.Y.ToString("0.0000"),
-                    new Vector2(0.0f, _spriteFont.LineSpacing * 7),
-                    Color.White);
+                    new Vector2(0.0f, _spriteFont.LineSpacing * Core.ScaleToDevice * 7),
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    Core.ScaleToDevice,
+                    SpriteEffects.None,
+                    0);
 
                 _spriteBatch.DrawString(
                     _spriteFont,
                     "Angle: " + (180 + direction.ToAngle() * 180 / System.Math.PI).ToString("0.00"),
-                    new Vector2(0.0f, _spriteFont.LineSpacing * 8),
-                    Color.White);
+                    new Vector2(0.0f, _spriteFont.LineSpacing * Core.ScaleToDevice * 8),
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    Core.ScaleToDevice,
+                    SpriteEffects.None,
+                    0);
 
                 _spriteBatch.DrawString(
                     _spriteFont,
                     "Charge: " + weaponComponent.charge.ToString("0"),
-                    new Vector2(0.0f, _spriteFont.LineSpacing * 9),
-                    Color.White);
+                    new Vector2(0.0f, _spriteFont.LineSpacing * Core.ScaleToDevice * 9),
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    Core.ScaleToDevice,
+                    SpriteEffects.None,
+                    0);
 
                 //var arrow = Assets.Texture("Compass");
-                MonoGame.arrowSprite.Rotation = direction.ToAngle();
+                //MonoGame.arrowSprite.Rotation = direction.ToAngle();
                 //MonoGame.arrowSprite.Render(_spriteBatch);
             _spriteBatch.End();
         }

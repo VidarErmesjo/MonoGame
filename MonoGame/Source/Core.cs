@@ -12,22 +12,20 @@ namespace MonoGame
     {
         private bool isDisposing = false;
 
-        private static MonoGame _game;
-        private static Size _virtualResolution;
-        private static Size _deviceResolution;
-        private static bool _fullscreen = false;
-        private static bool _graphics = false;
-        private static bool _viewport = false;
-        private static bool _input = false;
-        private static bool _units = false;
+        private static bool _setup = false;
         private static bool _initialized = false;
 
         public static GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
+        public static GameWindow Window { get; private set; }
         public static ContentManager Content { get; private set; }
 
         public static Size VirtualResolution { get; private set; }
-        public static Size DeviceResolution { get; private set; }
+        public static bool IsFullScreen { get; private set; }
+        public static Size TargetResolution { get; private set; }
         public static RenderTarget2D MainRenderTarget { get; private set; }
+        public static Rectangle TargetRectangle { get; private set; }
+        public static float ScaleToDevice { get; private set; }
+        public static bool LowResolution { get; private set; }
 
         public static OrthographicCamera Camera { get; private set; }
         public static BoxingViewportAdapter ViewportAdapter { get; private set; }
@@ -45,130 +43,98 @@ namespace MonoGame
         public Core(MonoGame game)
         {
             GraphicsDeviceManager = new GraphicsDeviceManager(game);
+            game.IsMouseVisible = true;
+            game.IsFixedTimeStep = true;
+            game.Content.RootDirectory = "Content";
+
             Content = game.Content;
-            _game = game;
+            Window = game.Window;
+         }
+
+        public static void Setup(Size resolution = default(Size), bool isFullscreen = true)
+        {
+            if(resolution == default(Size))
+                resolution = new Size(3840, 2160);
+
+            VirtualResolution = resolution;
+            IsFullScreen = isFullscreen;
+
+            _setup = true;
         }
 
-        public static void Initialize(Size virtualResolution = default(Size), Size deviceResolution = default(Size), bool fullscreen = false)
+        public static void Initialize()
         {
-           if(_initialized)
+            if(!_setup)
+                throw new InvalidOperationException("Core.Setup() must preceed Core.Initialize()");
+
+            if(_initialized)
                 return;
 
-            if(fullscreen)
-            {
-                GraphicsDeviceManager.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
-                GraphicsDeviceManager.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
-                GraphicsDeviceManager.IsFullScreen = true;
-            }
+            Window.AllowUserResizing = true;
+
+            LowResolution = false;
+
+            if(IsFullScreen)
+                TargetResolution = new Size(
+                    GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width,
+                    GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height);
             else
-            {
-                GraphicsDeviceManager.PreferredBackBufferWidth = deviceResolution.Width;
-                GraphicsDeviceManager.PreferredBackBufferHeight = deviceResolution.Height;
-            }
+                TargetResolution = new Size(
+                    GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width / 2,
+                    GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height / 2);
 
+            TargetRectangle = new Rectangle(0, 0, TargetResolution.Width, TargetResolution.Height);
+
+            GraphicsDeviceManager.PreferredBackBufferWidth = TargetResolution.Width;
+            GraphicsDeviceManager.PreferredBackBufferHeight = TargetResolution.Height;
+            GraphicsDeviceManager.IsFullScreen = IsFullScreen;
             GraphicsDeviceManager.SynchronizeWithVerticalRetrace = true;
+            GraphicsDeviceManager.HardwareModeSwitch = false;
             GraphicsDeviceManager.ApplyChanges();
-
-            _virtualResolution = virtualResolution;
-            _deviceResolution = deviceResolution;
-            _fullscreen = fullscreen;
-            _game.Window.AllowUserResizing = true;
-            _game.IsMouseVisible = true;
-            _game.IsFixedTimeStep = true;
-            _game.Content.RootDirectory = "Content";
-
-            if(!_graphics)
-                Graphics();
-            
-            if(!_viewport)
-                Viewport();
-            
-            if(!_input)
-                Input();
-
-            if(!_units)
-                Units();
-
-            _initialized = true;
-
-            System.Console.WriteLine("VirtualResolution => {0}, DeviceResolution => {1}", _virtualResolution, _deviceResolution);
-        }
-
-        private static void Graphics()
-        {
-            if(_graphics)
-                return;
-
-            if(_virtualResolution == default(Size))
-                _virtualResolution = new Size(3840, 2160);
-
-            if(_deviceResolution == default(Size))
-                _deviceResolution = new Size(
-                    _game.GraphicsDevice.Adapter.CurrentDisplayMode.Width,
-                    _game.GraphicsDevice.Adapter.CurrentDisplayMode.Height);
-            else _deviceResolution = new Size(
-                _game.GraphicsDevice.PresentationParameters.BackBufferWidth,
-                _game.GraphicsDevice.PresentationParameters.BackBufferHeight);
-            
-            VirtualResolution = _virtualResolution;
-            DeviceResolution = _deviceResolution;
+            GraphicsDeviceManager.HardwareModeSwitch = true;
 
             MainRenderTarget = new RenderTarget2D(
-                _game.GraphicsDevice,
-                _virtualResolution.Width,
-                _virtualResolution.Height,
+                graphicsDevice: GraphicsDeviceManager.GraphicsDevice,
+                width: Core.VirtualResolution.Width,
+                height: Core.VirtualResolution.Height,
                 false,
                 SurfaceFormat.Color,
                 DepthFormat.None,
-                preferredMultiSampleCount: _game.GraphicsDevice.PresentationParameters.MultiSampleCount,
-                RenderTargetUsage.DiscardContents); 
-
-            _graphics = true;
-        }
-
-        private static void Viewport()
-        {
-            if(_viewport)
-                return;
+                preferredMultiSampleCount: GraphicsDeviceManager.GraphicsDevice.PresentationParameters.MultiSampleCount,
+                RenderTargetUsage.DiscardContents);
 
             ViewportAdapter = new BoxingViewportAdapter(
-                _game.Window,
-                _game.GraphicsDevice,
-                _virtualResolution.Width,
-                _virtualResolution.Height);
+                Window,
+                GraphicsDeviceManager.GraphicsDevice,
+                VirtualResolution.Width,
+                VirtualResolution.Height);
             Camera = new OrthographicCamera(ViewportAdapter);
 
-            _viewport = true;
-        }
-
-        private static void Input()
-        {
-            if(_input)
-                return;
+            var scaleX = VirtualResolution.Width / (float) TargetResolution.Width;
+            var scaleY = VirtualResolution.Height / (float) TargetResolution.Height;
+            ScaleToDevice = (float) Math.Sqrt(scaleX * scaleX + scaleY * scaleY);
 
             MouseState = new MouseState();
+            Mouse.SetCursor(MouseCursor.Crosshair);
             KeyboardState = new KeyboardState();
             GamePadState = new GamePadState();
 
-            _game.IsMouseVisible = true;
-            Mouse.SetCursor(MouseCursor.Crosshair);
-
-            _input = true;
-        }
-
-        private static void Units()
-        {
-            if(_units)
-                return;
-
-            SpriteScale = 4f;
             SpriteSize = 16 * _meterToSpriteRatio;
+            SpriteScale = 1f;
             MetersPerPixel = 1 / (SpriteSize * SpriteScale);
             MetersPerScreen = new Size2(
-                _virtualResolution.Width,
-                _virtualResolution.Height) * MetersPerPixel;
+                VirtualResolution.Width,
+                VirtualResolution.Height) * MetersPerPixel;
 
-            _units = true;
+            _initialized = true;
+
+            System.Console.WriteLine("Core.Initialize() => OK");
+            System.Console.WriteLine("VirtualResolution => {0}, TargetResolution => {1}, ScaleToDevice => {2}", VirtualResolution, TargetResolution, ScaleToDevice);
+        }
+
+        public void ToggleRenderQuality()
+        {
+            LowResolution = !LowResolution;
         }
 
         public void Update()

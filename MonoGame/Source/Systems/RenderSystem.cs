@@ -2,7 +2,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Aseprite;
 
-
 namespace MonoGame.Extended.Entities.Systems
 {
     public class RenderSystem : EntityDrawSystem
@@ -12,8 +11,7 @@ namespace MonoGame.Extended.Entities.Systems
         private ComponentMapper<WeaponComponent> _weaponComponentMapper;
         private ComponentMapper<AsepriteSprite> _asepriteComponentMapper;
 
-        public RenderSystem()
-            : base(Aspect.All(typeof(AsepriteSprite), typeof(WeaponComponent)))
+        public RenderSystem() : base(Aspect.All(typeof(AsepriteSprite), typeof(WeaponComponent)))
         {
             _spriteBatch = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
             _camera = Core.Camera;
@@ -35,7 +33,7 @@ namespace MonoGame.Extended.Entities.Systems
 
             var direction = new Vector2(
                 (float) System.Math.Sin(MonoGame.rotation),
-                (float) -System.Math.Cos(MonoGame.rotation));
+                -(float) System.Math.Cos(MonoGame.rotation));
             direction.Normalize();
 
             foreach(var entity in ActiveEntities)
@@ -43,6 +41,7 @@ namespace MonoGame.Extended.Entities.Systems
                 WeaponComponent weaponComponent = _weaponComponentMapper.Get(entity);
                 AsepriteSprite aseprite = _asepriteComponentMapper.Get(entity);
 
+                //aseprite.Scale = 16;
                 aseprite.Rotation = direction.ToAngle();
                 aseprite.Render(_spriteBatch);
 

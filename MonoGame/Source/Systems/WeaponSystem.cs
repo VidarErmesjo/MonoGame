@@ -8,8 +8,7 @@ namespace MonoGame.Extended.Entities.Systems
         private readonly OrthographicCamera _camera;
         private ComponentMapper<WeaponComponent> _componentMapper;
 
-        public WeaponSystem()
-            : base(Aspect.All(typeof(WeaponComponent)))
+        public WeaponSystem() : base(Aspect.All(typeof(WeaponComponent)))
         {
             _camera = Core.Camera;
         }

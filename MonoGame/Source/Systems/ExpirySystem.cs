@@ -18,6 +18,9 @@ namespace MonoGame.Extended.Entities.Systems
         public override void Process(GameTime gameTime, int entityId)
         {
             ExpiryComponent expiryComponent = _expiryMapper.Get(entityId);
+            
+            if(expiryComponent.isPersistent)
+                return;
 
             expiryComponent.TimeRemaining -= gameTime.GetElapsedSeconds();
             if(expiryComponent.TimeRemaining < 0)

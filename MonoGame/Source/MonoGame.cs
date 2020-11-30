@@ -13,13 +13,6 @@ namespace MonoGame
 {
     public class MonoGame: Game
     {
-        // Graphics
-        private readonly Size _virtualResolution;
-        private readonly Size _deviceResolution;
-        private readonly bool _fullscreen;
-
-        // Weather
-        public static float WindSpeed = -0.1f;
 
         // Animation test
         public static AsepriteSprite arrowSprite;
@@ -51,12 +44,10 @@ namespace MonoGame
             Four
         }
 
-        public MonoGame(Size virtualResolution = default(Size), Size deviceResolution = default(Size), bool fullscreen = true)
+        public MonoGame(Size resolution = default(Size), bool fullscreen = true)
         {
             Core = new Core(this);
-            _virtualResolution = virtualResolution;
-            _deviceResolution = deviceResolution;
-            _fullscreen = fullscreen;
+            Core.Setup(resolution, fullscreen);
         }
 
         protected override void LoadContent()
@@ -67,8 +58,8 @@ namespace MonoGame
             // HUD components
             arrowSprite = new AsepriteSprite("Compass");
             arrowSprite.Position = new Vector2(
-                _virtualResolution.Width,
-                _virtualResolution.Height) * 0.5f;
+                Core.VirtualResolution.Width,
+                Core.VirtualResolution.Height) * 0.5f;
             arrowSprite.Scale = 0.032f;
             arrowSprite.Origin = new Vector2(
                 arrowSprite.Rectangle.Width * 0.5f,
@@ -81,8 +72,9 @@ namespace MonoGame
 
         protected override void Initialize()
         {
-            Core.Initialize(_virtualResolution, _deviceResolution, _fullscreen);
+            //Core.Initialize();
             base.Initialize();
+            Core.Initialize();
 
             player = new Entity[4];
 
@@ -103,15 +95,36 @@ namespace MonoGame
             player[(int) Player.One].Attach(new WeaponComponent(Weapon.None, 0));
         }
 
+        System.Diagnostics.Stopwatch Stoppwatch = new System.Diagnostics.Stopwatch();
+        private List<long> drawTicks = new List<long>();
+        private List<long> updateTicks = new List<long>();
         protected override void Update(GameTime gameTime)
-        {     
+        {
+            Stoppwatch.Reset();
+            Stoppwatch.Start();
             Core.Update();
             KeyboardState keyboardState = Core.KeyboardState;
             GamePadState gamePadState = Core.GamePadState;
             MouseState mouseState = Core.MouseState;
 
+            if(keyboardState.IsKeyDown(Keys.R))
+                Core.ToggleRenderQuality();
+
             if (gamePadState.Buttons.Back == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Escape))
+            {
+                long updateMean = 0;
+                foreach(var measure in updateTicks)
+                    updateMean += measure;
+
+                long drawMean = 0;
+                foreach(var measure in updateTicks)
+                    drawMean += measure;
+
+                System.Console.WriteLine("======SHUTING DOWN======");
+                System.Console.WriteLine("Update(): {0} [mean ticks of {1} measures]", updateMean / updateTicks.Count, updateTicks.Count);
+                System.Console.WriteLine("Draw(): {0} [mean ticks of {1} measures]", drawMean / drawTicks.Count, drawTicks.Count);
                 Exit();
+            }
 
             var direction = Core.Camera.ScreenToWorld(
                 new Vector2(
@@ -120,29 +133,41 @@ namespace MonoGame
             direction.Normalize();
             rotation = direction.ToAngle();
 
-            //_world.Update(gameTime);
             base.Update(gameTime);
+            Stoppwatch.Stop();
+            updateTicks.Add(Stoppwatch.ElapsedTicks);
         }
 
         protected override void Draw(GameTime gameTime)
         {
-            //_graphics.GraphicsDevice.Clear(Color.DarkSlateGray);
+            SpriteBatch SpriteBatch = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
+            Stoppwatch.Reset();
+            Stoppwatch.Start();
 
-            //_graphics.GraphicsDevice.SetRenderTarget(_primaryRenderTarget);
-            //_graphics.GraphicsDevice.Clear(ClearOptions.Target, Color.Black, 1.0f, 0);
+            if(Core.LowResolution)
+                Core.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(Core.MainRenderTarget);
+
             Core.GraphicsDeviceManager.GraphicsDevice.Clear(Color.Black);
-            //_world.Draw(gameTime);
-            //_graphics.GraphicsDevice.SetRenderTarget(null);
+            base.Draw(gameTime);
 
-            /*_spriteBatch.Begin(
-                sortMode: SpriteSortMode.Immediate,
-                blendState: BlendState.Opaque,
-                samplerState: SamplerState.PointClamp);
+            if(Core.LowResolution)
+            {
+                Core.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(null);
 
-               _spriteBatch.Draw(_primaryRenderTarget, FitToScreen(), Color.White);
-;
-            _spriteBatch.End(); */
-            base.Draw(gameTime);    
+                SpriteBatch.Begin(
+                    SpriteSortMode.Deferred,
+                    BlendState.NonPremultiplied,
+                    SamplerState.PointClamp);
+                    //null,
+                    //null,
+                    //null,
+                    //Core.ViewportAdapter.GetScaleMatrix());
+                SpriteBatch.Draw(Core.MainRenderTarget, Core.TargetRectangle, Color.White);
+                SpriteBatch.End();
+            }
+
+            Stoppwatch.Stop();
+            drawTicks.Add(Stoppwatch.ElapsedTicks);
         }
 
         protected override void Dispose(bool disposing)

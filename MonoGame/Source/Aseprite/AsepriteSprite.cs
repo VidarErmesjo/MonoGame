@@ -44,12 +44,11 @@ namespace MonoGame.Aseprite
             Rotation = 0.0f;
             SpriteEffect = SpriteEffects.None;
     
-            _asepriteData = new AsepriteData();
             try
             {
-                _asepriteData = JsonConvert.DeserializeObject<AsepriteData>(
+               _asepriteData = JsonConvert.DeserializeObject<AsepriteData>(
                     File.ReadAllText(Path.Combine("Content/Animations/" + name + ".json")));
-                
+               
                 if(_asepriteData.meta.frameTags.Count > 0)
                     _isAnimated = true;
 
@@ -64,8 +63,35 @@ namespace MonoGame.Aseprite
                     _asepriteData.frames[0].sourceSize.h * 0.5f);
 
                 Scale = _asepriteData.meta.scale;
+
+                int index = 0;
+                Dictionary<int, Rectangle> frames = new Dictionary<int, Rectangle>();
+                for(int y = 0; y < _asepriteData.meta.size.h; y += _asepriteData.frames[0].sourceSize.h)
+                    for(int x = 0; x < _asepriteData.meta.size.w; x += _asepriteData.frames[0].sourceSize.w)
+                    {
+                        Rectangle source = new Rectangle(
+                            x,
+                            y,
+                            _asepriteData.frames[0].sourceSize.w,
+                            _asepriteData.frames[0].sourceSize.h);
+                            
+                        frames.Add(index, source);
+                        index++;
+                    }
+
+                _animations = new Dictionary<string, List<Rectangle>>();
+                foreach(var frameTag in _asepriteData.meta.frameTags.ToArray())
+                {
+                    List<Rectangle> rectangles = new List<Rectangle>();
+                    for(int i = frameTag.from; i <= frameTag.to; i++)
+                    {
+                        rectangles.Add(frames[i]);
+                    }
+
+                    _animations.Add(frameTag.name, rectangles);
+                }
             }
-            catch(System.Exception e)
+            catch(FileNotFoundException)
             {
                 _isAnimated = false;
 
@@ -80,36 +106,7 @@ namespace MonoGame.Aseprite
                     Texture.Height * 0.5f);
 
                 Scale = 1.0f;
-
-                return;
             }
-
-            var frames = new Dictionary<int, Rectangle>();
-            int index = 0;
-            for(int y = 0; y < _asepriteData.meta.size.h; y += _asepriteData.frames[0].sourceSize.h)
-                for(int x = 0; x < _asepriteData.meta.size.w; x += _asepriteData.frames[0].sourceSize.w)
-                {
-                    Rectangle source = new Rectangle(
-                        x,
-                        y,
-                        _asepriteData.frames[0].sourceSize.w,
-                        _asepriteData.frames[0].sourceSize.h);
-                        
-                    frames.Add(index, source);
-                    index++;
-                }
-
-            _animations = new Dictionary<string, List<Rectangle>>();
-            foreach(var frameTag in _asepriteData.meta.frameTags.ToArray())
-            {
-                List<Rectangle> rectangles = new List<Rectangle>();
-                for(int i = frameTag.from; i <= frameTag.to; i++)
-                {
-                    rectangles.Add(frames[i]);
-                }
-
-                _animations.Add(frameTag.name, rectangles);
-           }
         }
 
         public Color[] Frame()
@@ -178,9 +175,7 @@ namespace MonoGame.Aseprite
 
             if(disposing)
             {
-                System.Console.WriteLine(Texture.Name + " disposed");
                 Texture.Dispose();
-
             }
 
             isDisposing = true;

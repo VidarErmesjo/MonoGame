@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework;
+using MonoGame.Extended;
 
 namespace MonoGame
 {
@@ -6,6 +7,7 @@ namespace MonoGame
     {
         public Vector2 Position { get; set; }
         public Vector2 Velocity { get; set; }
-        public float Size = 3;
+        public Point2 ImpactPoint { get; set; } // Attractor
+        public float Size { get; set; }
     }
 }

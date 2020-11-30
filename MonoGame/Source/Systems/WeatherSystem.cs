@@ -2,23 +2,24 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace MonoGame.Extended.Entities.Systems
-{// Render
+{
     public class WeatherSystem : EntityDrawSystem
     {
+        private readonly FastRandom _random;
         private readonly SpriteBatch _spriteBatch;
         private readonly OrthographicCamera _camera;
-        private ComponentMapper<RaindropComponent> _raindropComponentMapper;
+        private ComponentMapper<RaindropComponent> _raindropComponent;
 
-        public WeatherSystem()
-            : base(Aspect.All(typeof(RaindropComponent)))
+        public WeatherSystem() : base(Aspect.All(typeof(RaindropComponent)))
         {
+            _random = new FastRandom();
             _spriteBatch = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
             _camera = Core.Camera;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
         {
-            _raindropComponentMapper = mapperService.GetMapper<RaindropComponent>();
+            _raindropComponent = mapperService.GetMapper<RaindropComponent>();
         }
 
         public override void Draw(GameTime gameTime)
@@ -29,7 +30,9 @@ namespace MonoGame.Extended.Entities.Systems
 
             foreach(var entity in ActiveEntities)
             {
-                RaindropComponent raindropComponent = _raindropComponentMapper.Get(entity);
+                RaindropComponent raindropComponent = _raindropComponent.Get(entity);
+
+                //_spriteBatch.DrawLine(raindropComponent.Position, raindropComponent.ImpactPoint, Color.Red);
 
                 _spriteBatch.FillRectangle(
                     raindropComponent.Position,

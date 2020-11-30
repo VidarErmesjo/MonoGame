@@ -3,8 +3,6 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended;
-using MonoGame.Aseprite;
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -54,6 +52,7 @@ namespace MonoGame
             fonts = Load<SpriteFont>(content, "Fonts");
 
             _hasLoaded = true;
+            System.Console.WriteLine("Assets.LoadAllAssets() => OK");
         }
 
         public Dictionary<string, T> Load<T>(ContentManager content, string directory)
@@ -73,9 +72,9 @@ namespace MonoGame
 
                 Count++;
                 System.Console.WriteLine(
-                    "Asset loaded: {0} [Content/{1}]",
-                    asset.Split('/').Last(),
-                    asset.Split('/').First());    
+                    "{0}.Load<T>() => Loaded",
+                    asset.Split('/').Last());
+                    //asset.GetType().FullName);    
                             
                 tmp.Add(asset.Split('/').Last(), content.Load<T>(asset));
             }
@@ -99,7 +98,7 @@ namespace MonoGame
                 foreach(var texture in textures)
                 {
                     texture.Value.Dispose();
-                    System.Console.WriteLine("Asset disposed: {0}", texture.Key);
+                    System.Console.WriteLine("{0}.Dispose() => OK", texture.Key);
                 }
 
                 System.Console.WriteLine("Assets.Dispose() => OK");
