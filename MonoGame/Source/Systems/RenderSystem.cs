@@ -7,14 +7,12 @@ namespace MonoGame.Extended.Entities.Systems
     public class RenderSystem : EntityDrawSystem
     {
         private readonly SpriteBatch _spriteBatch;
-        private readonly OrthographicCamera _camera;
         private ComponentMapper<WeaponComponent> _weaponComponentMapper;
         private ComponentMapper<AsepriteSprite> _asepriteComponentMapper;
 
         public RenderSystem() : base(Aspect.All(typeof(AsepriteSprite), typeof(WeaponComponent)))
         {
             _spriteBatch = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
-            _camera = Core.Camera;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
@@ -29,7 +27,7 @@ namespace MonoGame.Extended.Entities.Systems
                 sortMode: SpriteSortMode.Deferred,
                 blendState: BlendState.NonPremultiplied,
                 samplerState: SamplerState.PointClamp,
-                transformMatrix: _camera.GetViewMatrix());
+                transformMatrix: Core.Camera.GetViewMatrix());
 
             var direction = new Vector2(
                 (float) System.Math.Sin(MonoGame.rotation),
@@ -42,8 +40,9 @@ namespace MonoGame.Extended.Entities.Systems
                 AsepriteSprite aseprite = _asepriteComponentMapper.Get(entity);
 
                 //aseprite.Scale = 16;
-                aseprite.Rotation = direction.ToAngle();
+                //aseprite.Rotation = direction.ToAngle();
                 aseprite.Render(_spriteBatch);
+                //System.Console.WriteLine(aseprite.Position);
 
                 // LAZER
                 if(weaponComponent.isCharging)

@@ -5,7 +5,6 @@ namespace MonoGame.Extended.Entities.Systems
     public class RainfallSystem : EntityUpdateSystem
     {
         private readonly FastRandom _random;
-        private readonly OrthographicCamera _camera;
         private ComponentMapper<RaindropComponent> _raindropComponent;
         private ComponentMapper<ExpiryComponent> _expiryComponent;
 
@@ -18,7 +17,6 @@ namespace MonoGame.Extended.Entities.Systems
         public RainfallSystem() : base(Aspect.All(typeof(RaindropComponent)))
         {
             _random = new FastRandom();
-            _camera = Core.Camera;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
@@ -83,8 +81,8 @@ namespace MonoGame.Extended.Entities.Systems
             entity.Attach(
                 new RaindropComponent
                 {
-                    Position = new Vector2(position.X + _camera.Position.X, 0 + _camera.Position.Y),
-                    ImpactPoint = position + _camera.Position,
+                    Position = new Vector2(position.X + Core.Camera.Position.X, 0 + Core.Camera.Position.Y),
+                    ImpactPoint = position + Core.Camera.Position,
                     Velocity = velocity,
                     Size = size 
                 });

@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended.ViewportAdapters;
+using MonoGame.Aseprite;
 
 namespace MonoGame.Extended.Entities.Systems
 {
@@ -9,15 +10,11 @@ namespace MonoGame.Extended.Entities.Systems
     {
         private readonly SpriteBatch _spriteBatch;
         private readonly SpriteFont _spriteFont;
-        private readonly OrthographicCamera _camera;
-        private readonly ViewportAdapter _viewportAdapter;
 
         public HUDSystem() : base(Aspect.All())
         {
             _spriteBatch = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
             _spriteFont = Assets.Font("Consolas");
-            _camera = Core.Camera;
-            _viewportAdapter = Core.ViewportAdapter;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
@@ -27,9 +24,7 @@ namespace MonoGame.Extended.Entities.Systems
         public override void Draw(GameTime gameTime)
         {
             WeaponComponent weaponComponent;
-            weaponComponent = MonoGame.player[(int) MonoGame.Player.One].Get<WeaponComponent>();
-
-            MouseState mouseState = Core.MouseState;
+            weaponComponent = MonoGame.player[0].Get<WeaponComponent>();
 
             var direction = new Vector2(
                 (float) System.Math.Sin(MonoGame.rotation),
@@ -40,7 +35,7 @@ namespace MonoGame.Extended.Entities.Systems
                 sortMode: SpriteSortMode.Deferred,
                 blendState: BlendState.AlphaBlend,
                 samplerState: SamplerState.PointClamp,
-                transformMatrix: _viewportAdapter.GetScaleMatrix() * Core.ScaleToDevice);
+                transformMatrix: Core.ViewportAdapter.GetScaleMatrix() * Core.ScaleToDevice);
 
                 _spriteBatch.DrawString(
                     _spriteFont,
@@ -77,7 +72,7 @@ namespace MonoGame.Extended.Entities.Systems
 
                 _spriteBatch.DrawString(
                     _spriteFont,
-                    "Camera: " + _camera.Position.X.ToString("0") + ", " + _camera.Position.Y.ToString("0") + ", " + _camera.Zoom.ToString("0"),
+                    "Camera: " + Core.Camera.Position.X.ToString("0") + ", " + Core.Camera.Position.Y.ToString("0") + ", " + Core.Camera.Zoom.ToString("0"),
                     new Vector2(0.0f, _spriteFont.LineSpacing * Core.ScaleToDevice * 3),
                     Color.White,
                     0f,
@@ -86,7 +81,7 @@ namespace MonoGame.Extended.Entities.Systems
                     SpriteEffects.None,
                     0);
 
-                var pointToScreen = Core.ViewportAdapter.PointToScreen(new Point(mouseState.X, mouseState.Y));
+                var pointToScreen = Core.ViewportAdapter.PointToScreen(new Point(Core.MouseState.X, Core.MouseState.Y));
                 _spriteBatch.DrawString(
                     _spriteFont,
                     "Cursor: " + pointToScreen.X.ToString("0") + ", " + pointToScreen.Y.ToString("0"),
@@ -98,7 +93,7 @@ namespace MonoGame.Extended.Entities.Systems
                     SpriteEffects.None,
                     0);
 
-                var screenToWorld = _camera.ScreenToWorld(mouseState.Position.ToVector2());
+                var screenToWorld = Core.Camera.ScreenToWorld(Core.MouseState.Position.ToVector2());
                 _spriteBatch.DrawString(
                     _spriteFont,
                     "ScreenToWorld(): " + screenToWorld.X.ToString("0") + ", " + screenToWorld.Y.ToString("0"),
@@ -110,7 +105,7 @@ namespace MonoGame.Extended.Entities.Systems
                     SpriteEffects.None,
                     0);
 
-                var worldToScreen = _camera.WorldToScreen(MonoGame.aseprite.Position);
+                var worldToScreen = MonoGame.player[0].Get<AsepriteSprite>().Position; //Core.Camera.WorldToScreen(MonoGame.aseprite.Position);
                 _spriteBatch.DrawString(
                     _spriteFont,
                     "Player: " + worldToScreen.X.ToString("0") + ", " + worldToScreen.Y.ToString("0"),

@@ -1,5 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MonoGame.Extended;
+using MonoGame.Extended.Collisions;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -8,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace MonoGame.Aseprite
 {
-    public class AsepriteSprite : IDisposable
+    public class AsepriteSprite : ICollisionActor, IDisposable
     {
         private bool isDisposing = false;
 
@@ -20,9 +22,12 @@ namespace MonoGame.Aseprite
         private bool _isAnimated = false;
 
         public Texture2D Texture { get; private set; }
+        public RenderTarget2D Outline { get; private set; }
         public Rectangle Rectangle { get; private set; }
+        public IShapeF Bounds { get; private set; }
         public Vector2 Position { get; set; }
         public Vector2 Origin { get; set; }
+        public Color Color { get; set; }
         public float Scale { get; set; }
         public float Rotation { get; set; }
         public SpriteEffects SpriteEffect { get; set; }
@@ -40,8 +45,9 @@ namespace MonoGame.Aseprite
                 for(int x = 0; x < Texture.Width; x++)
                     _pixelMap[x, y] = colors[x + y * Texture.Width];
 
-            Position = new Vector2(0.0f, 0.0f);
-            Rotation = 0.0f;
+            Position = new Vector2(0f, 0f);
+            Color = Color.White;
+            Rotation = 0f;
             SpriteEffect = SpriteEffects.None;
     
             try
@@ -105,8 +111,43 @@ namespace MonoGame.Aseprite
                     Texture.Width * 0.5f,
                     Texture.Height * 0.5f);
 
-                Scale = 1.0f;
+                Scale = 1f;
             }
+
+            /*Color[] color = new Color[Outline.Width * Outline.Height];
+            for(int i = 0; i < color.Length; i++)
+            {
+                color[i].R = 255;s
+                color[i].G = 255;
+                color[i].B = 255;
+                color[i].A = 255;
+            }
+            Outline.SetData<Color>(color);*/
+
+            Bounds = new RectangleF(
+                Rectangle.X,
+                Rectangle.Y,
+                Rectangle.Width + 2,
+                Rectangle.Height + 2);
+            Bounds.Position = Position;
+
+            Outline = new RenderTarget2D(
+                Core.GraphicsDeviceManager.GraphicsDevice,
+                Rectangle.Width + 2,
+                Rectangle.Height + 2);
+
+            Core.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(Outline);
+            SpriteBatch temp = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
+            temp.Begin(samplerState: SamplerState.PointClamp);
+            temp.DrawRectangle((RectangleF) Bounds, Color.White, 1);
+            temp.End();
+            Core.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(null);
+        }
+
+        public void OnCollision(CollisionEventArgs collisionEventArgs)
+        {
+            Bounds.Position -= collisionEventArgs.PenetrationVector;
+            System.Console.WriteLine("Making LOve! {0}, {1}", Bounds.Position, collisionEventArgs.PenetrationVector);
         }
 
         public Color[] Frame()
@@ -137,7 +178,7 @@ namespace MonoGame.Aseprite
 
         public void Update(GameTime gameTime)
         {
-            int frequency = (int) (gameTime.TotalGameTime.TotalMilliseconds % _asepriteData.frames[_currentFrame].duration);
+            int frequency = (int) (gameTime.TotalGameTime.Milliseconds % _asepriteData.frames[_currentFrame].duration);
             if(frequency == 0)
                 _currentFrame++;
 
@@ -145,15 +186,29 @@ namespace MonoGame.Aseprite
                 _currentFrame = 0;
 
             Rectangle = _animations[_currentAnimation].ToArray().ElementAt(_currentFrame);
+
+            //Bounds.Position = Position;
         }
 
         public void Render(SpriteBatch spriteBatch)
         {
+           spriteBatch.Draw(
+                texture: Outline,
+                position: Position,
+                sourceRectangle: Outline.Bounds,
+                color: Color.Red,
+                rotation: Rotation,
+                origin: Origin + Vector2.One,
+                scale: Scale,
+                effects: SpriteEffect,
+                layerDepth: 0
+            );
+
             spriteBatch.Draw(
                 texture: Texture,
                 position: Position,
                 sourceRectangle: Rectangle,
-                color: Color.White,
+                color: Color,
                 rotation: Rotation,
                 origin: Origin,
                 scale: Scale,

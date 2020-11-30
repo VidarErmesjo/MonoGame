@@ -7,14 +7,12 @@ namespace MonoGame.Extended.Entities.Systems
     {
         private readonly FastRandom _random;
         private readonly SpriteBatch _spriteBatch;
-        private readonly OrthographicCamera _camera;
         private ComponentMapper<RaindropComponent> _raindropComponent;
 
         public WeatherSystem() : base(Aspect.All(typeof(RaindropComponent)))
         {
             _random = new FastRandom();
             _spriteBatch = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
-            _camera = Core.Camera;
         }
 
         public override void Initialize(IComponentMapperService mapperService)
@@ -26,7 +24,7 @@ namespace MonoGame.Extended.Entities.Systems
         {
             _spriteBatch.Begin(
                 samplerState: SamplerState.PointClamp,
-                transformMatrix: _camera.GetViewMatrix());
+                transformMatrix: Core.Camera.GetViewMatrix());
 
             foreach(var entity in ActiveEntities)
             {

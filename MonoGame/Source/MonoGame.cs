@@ -8,7 +8,9 @@ using MonoGame.Extended;
 using MonoGame.Extended.Entities;
 using MonoGame.Extended.Entities.Systems;
 using MonoGame.Aseprite;
+using MonoGame.Components;
 
+// RetroHerzen ???
 namespace MonoGame
 {
     public class MonoGame: Game
@@ -36,13 +38,6 @@ namespace MonoGame
             None = 0,
             Something
         };
-
-        public enum Player {
-            One = 0,
-            Two,
-            Tree,
-            Four
-        }
 
         public MonoGame(Size resolution = default(Size), bool fullscreen = true)
         {
@@ -84,15 +79,29 @@ namespace MonoGame
                 .AddSystem(new HUDSystem())
                 .AddSystem(new ControllerSystem())
                 .AddSystem(new WeaponSystem())
+                .AddSystem(new CollisionSystem())
                 .AddSystem(new ExpirySystem())
                 .AddSystem(new RainfallSystem())
                 .Build();
             Components.Add(_world);
 
             // Entities
-            player[(int) Player.One] = _world.CreateEntity();
-            player[(int) Player.One].Attach(new AsepriteSprite("Shitsprite"));
-            player[(int) Player.One].Attach(new WeaponComponent(Weapon.None, 0));
+            player[0] = _world.CreateEntity();
+            player[0].Attach(new Player());
+            player[0].Attach(new AsepriteSprite("Shitsprite"));
+            player[0].Attach(new Collision());
+            player[0].Attach(new WeaponComponent(Weapon.None, 0));
+
+            entity = _world.CreateEntity();
+            entity.Attach(new AsepriteSprite("Shitsprite"));
+            entity.Attach(new Collision());
+            entity.Attach(new WeaponComponent(Weapon.None, 0));
+            entity.Get<AsepriteSprite>().Position = new Vector2(
+                Core.VirtualResolution.Width / 4,
+                Core.VirtualResolution.Height / 4);
+            entity.Get<AsepriteSprite>().Color = Color.Red;
+            //entity.Get<AsepriteSprite>().Rotation = (float) Math.PI/4;
+            entity.Get<AsepriteSprite>().Play("Walk");
         }
 
         System.Diagnostics.Stopwatch Stoppwatch = new System.Diagnostics.Stopwatch();
@@ -103,14 +112,23 @@ namespace MonoGame
             Stoppwatch.Reset();
             Stoppwatch.Start();
             Core.Update();
-            KeyboardState keyboardState = Core.KeyboardState;
-            GamePadState gamePadState = Core.GamePadState;
-            MouseState mouseState = Core.MouseState;
 
-            if(keyboardState.IsKeyDown(Keys.R))
+            if(Core.KeyboardState.IsKeyDown(Keys.Up))
+                Core.Camera.Zoom += 0.01f;
+
+            if(Core.KeyboardState.IsKeyDown(Keys.Down))
+                Core.Camera.Zoom -= 0.01f;
+
+            if(Core.KeyboardState.IsKeyDown(Keys.Left))
+                Core.Camera.Rotation -= 0.01f;
+
+            if(Core.KeyboardState.IsKeyDown(Keys.Right))
+                Core.Camera.Rotation += 0.01f;
+    
+            if(Core.KeyboardState.IsKeyDown(Keys.R))
                 Core.ToggleRenderQuality();
 
-            if (gamePadState.Buttons.Back == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Escape))
+            if (Core.GamePadState.Buttons.Back == ButtonState.Pressed || Core.KeyboardState.IsKeyDown(Keys.Escape))
             {
                 long updateMean = 0;
                 foreach(var measure in updateTicks)
@@ -127,13 +145,16 @@ namespace MonoGame
             }
 
             var direction = Core.Camera.ScreenToWorld(
-                new Vector2(
-                    mouseState.X,
-                    mouseState.Y)) - Core.Camera.Center;
+                new Vector2(Core.MouseState.X, Core.MouseState.Y)) - Core.Camera.Center;
             direction.Normalize();
             rotation = direction.ToAngle();
+            
+            player[0].Get<AsepriteSprite>().Rotation = rotation;
+            entity.Get<AsepriteSprite>().Position += Vector2.One * 0.1f;
 
             base.Update(gameTime);
+            //System.Console.WriteLine(entity.Get<AsepriteSprite>().Position + ", " + entity.Get<AsepriteSprite>().Bounds.Position);
+ 
             Stoppwatch.Stop();
             updateTicks.Add(Stoppwatch.ElapsedTicks);
         }
