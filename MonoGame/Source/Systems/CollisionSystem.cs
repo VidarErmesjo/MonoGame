@@ -4,58 +4,49 @@ using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended.Collisions;
 using MonoGame.Aseprite;
 using MonoGame.Components;
+using System;
 using System.Collections.Generic;
 
 namespace MonoGame.Extended.Entities.Systems
 {
     public class CollisionSystem : EntityUpdateSystem
     {
-        private Dictionary<int, IShapeF> _colliders;
-        private CollisionComponent _collisionComponent;
-        private ComponentMapper<AsepriteSprite> _asepriteComponentMapper;
-        private ComponentMapper<Collision> _colliderComponentMapper;
-        private ComponentMapper<CollisionComponent> _collisionComponentMapper;
+        private ComponentMapper<AsepriteSprite> _spriteMapper;
+        private ComponentMapper<Collision> _collisionMapper;
+        private ComponentMapper<ActorComponent> _actorMapper;
 
         public CollisionSystem() : base(Aspect.All(typeof(AsepriteSprite), typeof(Collision)))
         {
-            _colliders = new Dictionary<int, IShapeF>();
-            _collisionComponent = new CollisionComponent(new RectangleF(
-                0,
-                0,
-                Core.VirtualResolution.Width,
-                Core.VirtualResolution.Height));        }
+        }
 
         public override void Initialize(IComponentMapperService mapperService)
         {
-            _asepriteComponentMapper = mapperService.GetMapper<AsepriteSprite>();
-            _colliderComponentMapper = mapperService.GetMapper<Collision>();
-            _collisionComponentMapper = mapperService.GetMapper<CollisionComponent>();
+            _spriteMapper = mapperService.GetMapper<AsepriteSprite>();
+            _collisionMapper = mapperService.GetMapper<Collision>();
+            _actorMapper = mapperService.GetMapper<ActorComponent>();
+
+            Core.CollisionComponent.Initialize();
         }
 
         public override void Update(GameTime gameTime)
         {
-            _colliders.Clear();
-            foreach(var entity in ActiveEntities)
+            foreach(int entity in ActiveEntities)
             {
-                AsepriteSprite aseprite = _asepriteComponentMapper.Get(entity);
-                Collision collider = _colliderComponentMapper.Get(entity);
-                CollisionComponent collision = _collisionComponentMapper.Get(entity);
+                AsepriteSprite sprite = _spriteMapper.Get(entity);
+                ActorComponent actor = _actorMapper.Get(entity);
+                //Collision collision = _collisionMapper.Get(entity);
 
-                aseprite.Bounds.Position = aseprite.Position;
-                //_colliders.Add(entity, aseprite.Bounds);
+                //collision.Torso.Position = actor.Position - sprite.Origin - Vector2.One;
+                //sprite.Bounds.Position = actor.Position - sprite.Origin - Vector2.One;
 
-                _collisionComponent.Insert(aseprite);
+                /// !!!! Do multiple RectangleF's from Aseprite slices?? (Head, Body etc.)
+                //sprite.Update(gameTime);
+                //if(!Core.CollisionComponent.Contains(sprite))
+                //sprite.Position = actor.Position;
+                //sprite.Update(gameTime); // ?
+                Core.CollisionComponent.Insert(sprite);
             }
-            _collisionComponent.Update(gameTime);
-
-            /*foreach(var record in _colliders)
-            {
-                foreach(var current in _colliders)
-                {
-                    if(record.Value.Intersects(current.Value) && record.Key != current.Key)
-                        System.Console.WriteLine("Impact! {0}{1}, {2}{3}", record.Key, record.Value, current.Key, current.Value);
-                }
-            }*/
-        }        
+            Core.CollisionComponent.Update(gameTime);
+        }       
     }
 }

@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended;
+using MonoGame.Extended.Collisions;
 using MonoGame.Extended.Entities;
 using MonoGame.Extended.Entities.Systems;
 using MonoGame.Aseprite;
@@ -15,12 +16,7 @@ namespace MonoGame
 {
     public class MonoGame: Game
     {
-
-        // Animation test
-        public static AsepriteSprite arrowSprite;
-        public static AsepriteSprite aseprite;
-
-        private World _world { get; set; }
+        private bool isDisposed = false;
 
         // Make Array of players, npcs, etc.
         public static Entity[] player { get; set; }
@@ -32,6 +28,7 @@ namespace MonoGame
 
         public static Core Core { get; private set; }
         public static Assets Assets { get; private set; }
+        public static World World { get; private set; }
 
         // Experimental
         public enum Weapon {
@@ -49,59 +46,42 @@ namespace MonoGame
         {
             Assets = new Assets();
             Assets.LoadAllAssets(Core.Content);
-
-            // HUD components
-            arrowSprite = new AsepriteSprite("Compass");
-            arrowSprite.Position = new Vector2(
-                Core.VirtualResolution.Width,
-                Core.VirtualResolution.Height) * 0.5f;
-            arrowSprite.Scale = 0.032f;
-            arrowSprite.Origin = new Vector2(
-                arrowSprite.Rectangle.Width * 0.5f,
-                arrowSprite.Rectangle.Height * 0.5f);
-            arrowSprite.SpriteEffect = SpriteEffects.FlipVertically;
-
-            aseprite = new AsepriteSprite("Shitsprite");
-            aseprite.SpriteEffect = SpriteEffects.FlipVertically;
         }
 
         protected override void Initialize()
         {
-            //Core.Initialize();
             base.Initialize();
             Core.Initialize();
 
             player = new Entity[4];
 
-            _world = new WorldBuilder()
+            World = new WorldBuilder()
+                .AddSystem(new PlayerSystem())
+                .AddSystem(new ActorSystem())
+                .AddSystem(new ControllerSystem())
+                .AddSystem(new WeaponSystem())
                 .AddSystem(new RenderSystem())
                 .AddSystem(new WeatherSystem())
                 .AddSystem(new HUDSystem())
-                .AddSystem(new ControllerSystem())
-                .AddSystem(new WeaponSystem())
                 .AddSystem(new CollisionSystem())
                 .AddSystem(new ExpirySystem())
                 .AddSystem(new RainfallSystem())
                 .Build();
-            Components.Add(_world);
+            Components.Add(World);
+            World.Initialize();
 
             // Entities
-            player[0] = _world.CreateEntity();
-            player[0].Attach(new Player());
+            player[0] = World.CreateEntity();
+            player[0].Attach(new PlayerComponent(player[0].Id, Core.Camera.Center));
             player[0].Attach(new AsepriteSprite("Shitsprite"));
             player[0].Attach(new Collision());
             player[0].Attach(new WeaponComponent(Weapon.None, 0));
 
-            entity = _world.CreateEntity();
+            entity = World.CreateEntity();
+            entity.Attach(new ActorComponent(entity.Id, Vector2.One * 0.5f, Vector2.One));
             entity.Attach(new AsepriteSprite("Shitsprite"));
             entity.Attach(new Collision());
             entity.Attach(new WeaponComponent(Weapon.None, 0));
-            entity.Get<AsepriteSprite>().Position = new Vector2(
-                Core.VirtualResolution.Width / 4,
-                Core.VirtualResolution.Height / 4);
-            entity.Get<AsepriteSprite>().Color = Color.Red;
-            //entity.Get<AsepriteSprite>().Rotation = (float) Math.PI/4;
-            entity.Get<AsepriteSprite>().Play("Walk");
         }
 
         System.Diagnostics.Stopwatch Stoppwatch = new System.Diagnostics.Stopwatch();
@@ -144,17 +124,9 @@ namespace MonoGame
                 Exit();
             }
 
-            var direction = Core.Camera.ScreenToWorld(
-                new Vector2(Core.MouseState.X, Core.MouseState.Y)) - Core.Camera.Center;
-            direction.Normalize();
-            rotation = direction.ToAngle();
-            
-            player[0].Get<AsepriteSprite>().Rotation = rotation;
-            entity.Get<AsepriteSprite>().Position += Vector2.One * 0.1f;
-
+            //World.Update(gameTime);
             base.Update(gameTime);
-            //System.Console.WriteLine(entity.Get<AsepriteSprite>().Position + ", " + entity.Get<AsepriteSprite>().Bounds.Position);
- 
+
             Stoppwatch.Stop();
             updateTicks.Add(Stoppwatch.ElapsedTicks);
         }
@@ -169,6 +141,7 @@ namespace MonoGame
                 Core.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(Core.MainRenderTarget);
 
             Core.GraphicsDeviceManager.GraphicsDevice.Clear(Color.Black);
+            //World.Draw(gameTime);
             base.Draw(gameTime);
 
             if(Core.LowResolution)
@@ -193,17 +166,25 @@ namespace MonoGame
 
         protected override void Dispose(bool disposing)
         {
+            if(isDisposed)
+                return;
+
             if(disposing)
             {
-                _world.Dispose();
-                aseprite.Dispose();
-                arrowSprite.Dispose();
-
                 Assets.Dispose();
                 Core.Dispose();
+                World.Dispose();
+
+                foreach(Entity entity in player)
+                    if(entity != null)
+                        entity.Destroy();
+
+                 entity.Destroy();
             }
 
             base.Dispose(disposing);
+
+            isDisposed = true;
         }
 
         ~MonoGame()

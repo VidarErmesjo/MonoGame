@@ -6,19 +6,15 @@ using MonoGame.Aseprite;
 
 namespace MonoGame.Extended.Entities.Systems
 {
-    public class HUDSystem: EntityDrawSystem
+    public class HUDSystem: DrawSystem
     {
         private readonly SpriteBatch _spriteBatch;
         private readonly SpriteFont _spriteFont;
 
-        public HUDSystem() : base(Aspect.All())
+        public HUDSystem()
         {
             _spriteBatch = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
             _spriteFont = Assets.Font("Consolas");
-        }
-
-        public override void Initialize(IComponentMapperService mapperService)
-        {
         }
 
         public override void Draw(GameTime gameTime)
@@ -61,7 +57,7 @@ namespace MonoGame.Extended.Entities.Systems
 
                 _spriteBatch.DrawString(
                     _spriteFont,
-                    "ActiveEntities: " + ActiveEntities.Count,
+                    "EntityCount: " + MonoGame.World.EntityCount,
                     new Vector2(0.0f, _spriteFont.LineSpacing * Core.ScaleToDevice * 2),
                     Color.White,
                     0f,

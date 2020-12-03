@@ -4,13 +4,15 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended;
+using MonoGame.Extended.Collisions;
+using MonoGame.Extended.Entities;
 using MonoGame.Extended.ViewportAdapters;
 
 namespace MonoGame
 {
     public class Core : IDisposable
     {
-        private bool isDisposing = false;
+        private bool isDisposed = false;
 
         private static bool _setup = false;
         private static bool _initialized = false;
@@ -20,19 +22,25 @@ namespace MonoGame
         public static ContentManager Content { get; private set; }
 
         public static Size VirtualResolution { get; private set; }
-        public static bool IsFullScreen { get; private set; }
         public static Size TargetResolution { get; private set; }
+        //public static SpriteBatch SpriteBatch { get; private set; }
         public static RenderTarget2D MainRenderTarget { get; private set; }
         public static Rectangle TargetRectangle { get; private set; }
         public static float ScaleToDevice { get; private set; }
+        public static bool IsFullScreen { get; private set; }
         public static bool LowResolution { get; private set; }
 
         public static OrthographicCamera Camera { get; private set; }
         public static BoxingViewportAdapter ViewportAdapter { get; private set; }
 
+        public static CollisionComponent CollisionComponent { get; private set; }
+
         public static MouseState MouseState { get; private set; }
+        public static MouseState PreviousMouseState { get; private set; }
         public static KeyboardState KeyboardState { get; private set; }
+        public static KeyboardState PreviousKeyboardState { get; private set; }
         public static GamePadState GamePadState { get; private set; }
+        public static GamePadState PreviousGamePadState { get; private set; }
 
         private const float _meterToSpriteRatio = 1f;
         public static float SpriteSize { get; private set; }
@@ -110,14 +118,23 @@ namespace MonoGame
                 VirtualResolution.Height);
             Camera = new OrthographicCamera(ViewportAdapter);
 
+            CollisionComponent = new CollisionComponent(new RectangleF(
+                0f,
+                0f,
+                VirtualResolution.Width,
+                VirtualResolution.Height));
+
             var scaleX = VirtualResolution.Width / (float) TargetResolution.Width;
             var scaleY = VirtualResolution.Height / (float) TargetResolution.Height;
             ScaleToDevice = (float) Math.Sqrt(scaleX * scaleX + scaleY * scaleY);
 
             MouseState = new MouseState();
+            PreviousMouseState = new MouseState();
             Mouse.SetCursor(MouseCursor.Crosshair);
             KeyboardState = new KeyboardState();
+            PreviousKeyboardState = new KeyboardState();
             GamePadState = new GamePadState();
+            PreviousGamePadState = new GamePadState();
 
             SpriteSize = 16 * _meterToSpriteRatio;
             SpriteScale = 1f;
@@ -139,6 +156,9 @@ namespace MonoGame
 
         public void Update()
         {
+            PreviousMouseState = MouseState;
+            PreviousKeyboardState = KeyboardState;
+            PreviousGamePadState = GamePadState;
             MouseState = Mouse.GetState();
             KeyboardState = Keyboard.GetState();
             GamePadState = GamePad.GetState(PlayerIndex.One);
@@ -152,16 +172,19 @@ namespace MonoGame
 
         public virtual void Dispose(bool disposing)
         {
-            if(isDisposing)
+            if(isDisposed)
                 return;
 
             if(disposing)
             {
+                CollisionComponent.Dispose();
                 GraphicsDeviceManager.Dispose();
                 MainRenderTarget.Dispose();
                 ViewportAdapter.Dispose();
                 System.Console.WriteLine("Core.Dispose() => OK");
             }
+
+            isDisposed = true;
         }
 
         ~Core()

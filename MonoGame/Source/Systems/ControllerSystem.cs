@@ -8,15 +8,17 @@ namespace MonoGame.Extended.Entities.Systems
 {
     public class ControllerSystem : EntityUpdateSystem
     {
-        private ComponentMapper<AsepriteSprite> _asepriteMapper;
+        private ComponentMapper<AsepriteSprite> _spriteMapper;
+        private ComponentMapper<PlayerComponent> _playerMapper;
 
-        public ControllerSystem() : base(Aspect.All(typeof(AsepriteSprite), typeof(Player)))
+        public ControllerSystem() : base(Aspect.All(typeof(AsepriteSprite), typeof(PlayerComponent)))
         {
         }
 
         public override void Initialize(IComponentMapperService mapperService)
         {
-            _asepriteMapper = mapperService.GetMapper<AsepriteSprite>();
+            _spriteMapper = mapperService.GetMapper<AsepriteSprite>();
+            _playerMapper = mapperService.GetMapper<PlayerComponent>();
         }
 
         public override void Update(GameTime gameTime)
@@ -24,24 +26,33 @@ namespace MonoGame.Extended.Entities.Systems
             KeyboardState keyboardState = Core.KeyboardState;
             float elapsedSeconds = gameTime.GetElapsedSeconds();
 
+            Vector2 angle = Core.Camera.ScreenToWorld(
+                new Vector2(Core.MouseState.X, Core.MouseState.Y)) - Core.Camera.Center;
+            angle.Normalize();
 
-            Vector2 direction = new Vector2(0.0f, 0.0f);
+            Vector2 direction = Vector2.Zero;
             direction.X = Core.KeyboardState.IsKeyDown(Keys.A) ? -1.0f :
                 Core.KeyboardState.IsKeyDown(Keys.D) ? 1.0f : 0.0f;  
             direction.Y = Core.KeyboardState.IsKeyDown(Keys.W) ? -1.0f:
                 Core.KeyboardState.IsKeyDown(Keys.S) ? 1.0f : 0.0f;  
             direction.Normalize();
 
-            if(!direction.IsNaN())
-                Core.Camera.Move(direction * elapsedSeconds * Core.SpriteSize * Core.SpriteScale);
+            //if(!direction.IsNaN())
+            //    Core.Camera.Move(direction * elapsedSeconds * Core.SpriteSize * Core.SpriteScale);
 
+            // Move to PlayerSystem. Have GamePadSystem / Component instead?
             foreach(var entity in ActiveEntities)
             {
-                AsepriteSprite player = _asepriteMapper.Get(entity);
-                player.SpriteEffect = SpriteEffects.FlipVertically;
-                player.Play((!direction.IsNaN() ? "Walk" : "Idle"));
-                player.Position = Core.Camera.Center;
-                player.Update(gameTime);
+                AsepriteSprite sprite = _spriteMapper.Get(entity);
+                PlayerComponent player = _playerMapper.Get(entity);
+
+                //sprite.Velocity = !direction.IsNaN() ? direction * Core.SpriteSize * Core.SpriteScale : Vector2.Zero;
+                player.Velocity = !direction.IsNaN() ? direction * Core.SpriteSize * Core.SpriteScale * elapsedSeconds : Vector2.Zero;
+                //Core.Camera.Move(player.Velocity * elapsedSeconds);
+                sprite.SpriteEffect = SpriteEffects.FlipVertically;
+                //sprite.Play((!direction.IsNaN() ? "Walk" : "Idle"));
+                //sprite.Position = Core.Camera.Center;
+                sprite.Rotation = angle.ToAngle();
             }
         }
     }

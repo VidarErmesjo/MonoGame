@@ -15,9 +15,7 @@
 #---------------------------------- Content ---------------------------------#
 
 #begin Animations/Shitsprite.json
-/importer:AsepriteImporter
-/processor:Processor
-/build:Animations/Shitsprite.json
+/copy:Animations/Shitsprite.json
 
 #begin Fonts/Arial.spritefont
 /importer:FontDescriptionImporter

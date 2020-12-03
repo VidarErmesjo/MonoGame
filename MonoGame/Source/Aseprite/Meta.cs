@@ -11,5 +11,6 @@ namespace MonoGame.Aseprite
         public Rect size { get; set; }
         public float scale { get; set; }
         public List<FrameTagInfo> frameTags { get; set; }      
+        public List<SliceInfo> slizes { get; set; }
     }
 }

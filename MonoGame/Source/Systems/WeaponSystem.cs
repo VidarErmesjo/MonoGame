@@ -20,22 +20,22 @@ namespace MonoGame.Extended.Entities.Systems
         {
             foreach(var entity in ActiveEntities)
             {
-                var component = _componentMapper.Get(entity);
+                var weapon = _componentMapper.Get(entity);
                 if(Core.MouseState.LeftButton == ButtonState.Pressed)
                 {
-                    if(!component.isCharging)
+                    if(!weapon.isCharging)
                     {
-                        component.toggleIsCharging();
-                        component.charge = 0.0f;
+                        weapon.toggleIsCharging();
+                        weapon.charge = 0.0f;
                     }
                     else
                     {
-                        component.charge += 1.0f;
-                        if(component.charge > 255.0f)
-                            component.charge = 255.0f;  
+                        weapon.charge += 1.0f;
+                        if(weapon.charge > 255.0f)
+                            weapon.charge = 255.0f;  
 
-                        component.origin = Core.Camera.Center;
-                        component.destination = Core.Camera.ScreenToWorld(
+                        weapon.origin = Core.Camera.Center;
+                        weapon.destination = Core.Camera.ScreenToWorld(
                             new Vector2(
                                 Core.MouseState.X,
                                 Core.MouseState.Y));
@@ -43,15 +43,15 @@ namespace MonoGame.Extended.Entities.Systems
                 }
                 else
                 {
-                    if(component.isCharging)
-                        component.toggleIsCharging();
+                    if(weapon.isCharging)
+                        weapon.toggleIsCharging();
 
-                    if(!component.isCharging)
+                    if(!weapon.isCharging)
                     {
-                        if(component.charge > 0.0f)
-                            component.charge -= 1.0f;
+                        if(weapon.charge > 0.0f)
+                            weapon.charge -= 1.0f;
                         else
-                            component.charge = 0.0f;
+                            weapon.charge = 0.0f;
                     }
                 }
             }

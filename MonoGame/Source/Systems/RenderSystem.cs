@@ -1,14 +1,16 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Aseprite;
+//using MonoGame.Extended.Entities;
+//using MonoGame.Extended.Entities.Systems;
 
 namespace MonoGame.Extended.Entities.Systems
 {
     public class RenderSystem : EntityDrawSystem
     {
         private readonly SpriteBatch _spriteBatch;
-        private ComponentMapper<WeaponComponent> _weaponComponentMapper;
-        private ComponentMapper<AsepriteSprite> _asepriteComponentMapper;
+        private ComponentMapper<WeaponComponent> _weaponMapper;
+        private ComponentMapper<AsepriteSprite> _spriteMapper;
 
         public RenderSystem() : base(Aspect.All(typeof(AsepriteSprite), typeof(WeaponComponent)))
         {
@@ -17,8 +19,8 @@ namespace MonoGame.Extended.Entities.Systems
 
         public override void Initialize(IComponentMapperService mapperService)
         {
-            _weaponComponentMapper = mapperService.GetMapper<WeaponComponent>();
-            _asepriteComponentMapper = mapperService.GetMapper<AsepriteSprite>();
+            _weaponMapper = mapperService.GetMapper<WeaponComponent>();
+            _spriteMapper = mapperService.GetMapper<AsepriteSprite>();
         }
 
         public override void Draw(GameTime gameTime)
@@ -36,46 +38,42 @@ namespace MonoGame.Extended.Entities.Systems
 
             foreach(var entity in ActiveEntities)
             {
-                WeaponComponent weaponComponent = _weaponComponentMapper.Get(entity);
-                AsepriteSprite aseprite = _asepriteComponentMapper.Get(entity);
+                WeaponComponent weapon = _weaponMapper.Get(entity);
+                AsepriteSprite sprite = _spriteMapper.Get(entity);
 
-                //aseprite.Scale = 16;
-                //aseprite.Rotation = direction.ToAngle();
-                aseprite.Render(_spriteBatch);
-                //System.Console.WriteLine(aseprite.Position);
+                sprite.Render(_spriteBatch);
 
-                // LAZER
-                if(weaponComponent.isCharging)
+                if(weapon.isCharging)
                 {
                     _spriteBatch.DrawLine(
-                        weaponComponent.origin.X,
-                        weaponComponent.origin.Y,
-                        weaponComponent.destination.X,
-                        weaponComponent.destination.Y,
+                        weapon.origin.X,
+                        weapon.origin.Y,
+                        weapon.destination.X,
+                        weapon.destination.Y,
                         new Color
                         {
                             R = 0,
                             G = 255,
                             B = 0,
-                            A = (byte) weaponComponent.charge
+                            A = (byte) weapon.charge
                         },
-                        weaponComponent.charge);
+                        weapon.charge);
                 }
-                else if(weaponComponent.charge > 0.0f)
+                else if(weapon.charge > 0.0f)
                 {
                     _spriteBatch.DrawLine(
-                        weaponComponent.origin.X,
-                        weaponComponent.origin.Y,
-                        weaponComponent.destination.X,
-                        weaponComponent.destination.Y,
+                        weapon.origin.X,
+                        weapon.origin.Y,
+                        weapon.destination.X,
+                        weapon.destination.Y,
                         new Color
                         {
                             R = 255,
                             G = 0,
                             B = 0,
-                            A = (byte) weaponComponent.charge
+                            A = (byte) weapon.charge
                         },
-                        weaponComponent.charge);
+                        weapon.charge);
                 }
             }
 
