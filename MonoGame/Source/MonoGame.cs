@@ -78,7 +78,12 @@ namespace MonoGame
             player[0].Attach(new WeaponComponent(Weapon.None, 0));
 
             entity = World.CreateEntity();
-            entity.Attach(new ActorComponent(entity.Id, Vector2.One * 0.5f, Vector2.One));
+            entity.Attach(new ActorComponent(
+                entity.Id,
+                new Vector2(
+                    Core.VirtualResolution.Width * 0.25f,
+                    Core.VirtualResolution.Height * 0.25f),
+                Vector2.Zero));
             entity.Attach(new AsepriteSprite("Shitsprite"));
             entity.Attach(new Collision());
             entity.Attach(new WeaponComponent(Weapon.None, 0));
@@ -93,16 +98,16 @@ namespace MonoGame
             Stoppwatch.Start();
             Core.Update();
 
-            if(Core.KeyboardState.IsKeyDown(Keys.Up))
+            if(Core.KeyboardState.IsKeyDown(Keys.W))
                 Core.Camera.Zoom += 0.01f;
 
-            if(Core.KeyboardState.IsKeyDown(Keys.Down))
+            if(Core.KeyboardState.IsKeyDown(Keys.S))
                 Core.Camera.Zoom -= 0.01f;
 
-            if(Core.KeyboardState.IsKeyDown(Keys.Left))
+            if(Core.KeyboardState.IsKeyDown(Keys.A))
                 Core.Camera.Rotation -= 0.01f;
 
-            if(Core.KeyboardState.IsKeyDown(Keys.Right))
+            if(Core.KeyboardState.IsKeyDown(Keys.D))
                 Core.Camera.Rotation += 0.01f;
     
             if(Core.KeyboardState.IsKeyDown(Keys.R))

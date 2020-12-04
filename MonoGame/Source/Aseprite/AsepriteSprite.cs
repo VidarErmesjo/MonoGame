@@ -15,22 +15,23 @@ namespace MonoGame.Aseprite
         private bool isDisposing = false;
 
         private readonly Dictionary<string, List<Rectangle>> _animations;
+        private readonly Dictionary<string, List<Color[]>> _data;
+        private readonly Dictionary<string, List<bool[]>> _mask;
         private readonly Dictionary<string, List<Rectangle>> _slices;
         private readonly AsepriteData _asepriteData;
         private Color[,] _pixelMap = null;
         private string _currentAnimation = "Idle";
         private int _currentFrame = 0;
         private bool _isAnimated = false;
-        private bool _isColliding = false;
         private bool _hasSlices = false;
 
         public Texture2D Texture { get; private set; }
         public RenderTarget2D Outline { get; private set; }
         public Rectangle Rectangle { get; private set; }
         public IShapeF Bounds { get; private set; }
+        public Vector2 PenetrationVector { get; private set; }
 
         public Vector2 Position { get; set; }
-        public Vector2 Velocity { get; set; }
         public Vector2 Origin { get; set; }
         public Color Color { get; set; }
         public float Scale { get; set; }
@@ -46,6 +47,22 @@ namespace MonoGame.Aseprite
                     Matrix.CreateScale(this.Scale) *
                     Matrix.CreateTranslation(new Vector3(this.Position, 0));
             }
+        }
+
+        public Color[] Data
+        {
+            get
+            {
+                return _data[_currentAnimation].ToArray().ElementAt(_currentFrame);
+            }
+        }
+
+        public bool[] Mask
+        {
+            get
+            {
+                return _mask[_currentAnimation].ToArray().ElementAt(_currentFrame);
+            }            
         }
 
         // Experimental
@@ -71,6 +88,7 @@ namespace MonoGame.Aseprite
     
             try
             {
+                // Check for .json Asprite data
                _asepriteData = JsonConvert.DeserializeObject<AsepriteData>(
                     File.ReadAllText(Path.Combine("Content/Animations/" + name + ".json")));
                
@@ -102,7 +120,8 @@ namespace MonoGame.Aseprite
                             y,
                             _asepriteData.frames[0].sourceSize.w,
                             _asepriteData.frames[0].sourceSize.h);
-                            
+                        
+                        // All frames (used/unused) in sprite sheet
                         frames.Add(index, source);
                         index++;
                     }
@@ -110,20 +129,40 @@ namespace MonoGame.Aseprite
                 if(_isAnimated)
                 {
                     _animations = new Dictionary<string, List<Rectangle>>();
+                    _data = new Dictionary<string, List<Color[]>>();
+                    _mask = new Dictionary<string, List<bool[]>>();
                     foreach(var frameTag in _asepriteData.meta.frameTags.ToArray())
                     {
                         List<Rectangle> rectangles = new List<Rectangle>();
+                        List<Color[]> data = new List<Color[]>();
+                        List<bool[]> mask = new List<bool[]>();
                         for(int i = frameTag.from; i <= frameTag.to; i++)
                         {
+                            // Animation frames to use
                             rectangles.Add(frames[i]);
+
+                            // Cache pixel data
+                            Color[] tempData = new Color[frames[i].Width * frames[i].Height];
+                            this.Texture.GetData<Color>(0, frames[i], tempData, 0, frames[i].Width * frames[i].Height);
+                            data.Add(tempData);
+
+                            // Cache collision mask
+                            bool[] tempMask = new bool[frames[i].Width * frames[i].Height];
+                            for(index = 0; index < tempData.Length; index++)
+                                tempMask[index] = tempData[index].A != 0 ? true : false;
+                            mask.Add(tempMask);
                         }
 
+                        // Done
                         _animations.Add(frameTag.name, rectangles);
+                        _data.Add(frameTag.name, data);
+                        _mask.Add(frameTag.name, mask);
                     }
                 }
 
                 if(_hasSlices)
                 {
+                    // Slizes for multiple collision boxes?
                     _slices = new Dictionary<string, List<Rectangle>>();
                     foreach(var slize in _asepriteData.meta.slizes.ToArray())
                     {
@@ -133,6 +172,7 @@ namespace MonoGame.Aseprite
             }
             catch(FileNotFoundException)
             {
+                // Revert to static sprite
                 _isAnimated = false;
 
                 this.Rectangle = new Rectangle(
@@ -148,36 +188,21 @@ namespace MonoGame.Aseprite
                 this.Scale = 1f;
             }
 
-            /*Color[] color = new Color[Outline.Width * Outline.Height];
-            for(int i = 0; i < color.Length; i++)
-            {
-                color[i].R = 255;s
-                color[i].G = 255;
-                color[i].B = 255;
-                color[i].A = 255;
-            }
-            Outline.SetData<Color>(color);*/
-
-            /*this.Bounds = new RectangleF(
-                this.Rectangle.X,
-                this.Rectangle.Y,
-                this.Rectangle.Width + 2,
-                this.Rectangle.Height + 2);
-            this.Bounds.Position = Position;*/
+            // Common
             this.Bounds = new RectangleF(
-                this.Position - this.Origin - Vector2.One,
+                this.Position - this.Origin,// - Vector2.One,
                 new Size2(
-                    this.Rectangle.Width + 2,
-                    this.Rectangle.Height + 2));
+                    this.Rectangle.Width + 0,
+                    this.Rectangle.Height + 0));
 
-            /*this.Bounds = new CircleF(
+            this.Bounds = new CircleF(
                 Point2.Zero,
-                (float) System.Math.Sqrt(this.Origin.X * this.Origin.X + this.Origin.Y * this.Origin.Y));*/
+                (float) System.Math.Sqrt(this.Origin.X * this.Origin.X + this.Origin.Y * this.Origin.Y));
 
-            this.Outline = new RenderTarget2D(
+            /*this.Outline = new RenderTarget2D(
                 Core.GraphicsDeviceManager.GraphicsDevice,
                 this.Rectangle.Width + 2,
-                this.Rectangle.Height + 2);
+                this.Rectangle.Height + 2);*/
 
             /*Core.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(this.Outline);
             SpriteBatch temp = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
@@ -190,6 +215,7 @@ namespace MonoGame.Aseprite
             //polygon = new Extended.Shapes.Polygon();
         }
 
+        // Same as Data?
         public Color[] Frame()
         {
             Color[] colors = new Color[Rectangle.Width * Rectangle.Height];
@@ -232,25 +258,12 @@ namespace MonoGame.Aseprite
 
             this.Color = Color.White;
             this.PenetrationVector = Vector2.Zero;
-            _isColliding = false;
         }
 
         public void Render(SpriteBatch spriteBatch)
         {
-           /*spriteBatch.Draw(
-                texture: this.Outline,
-                position: this.Position,
-                sourceRectangle: this.Outline.Bounds,
-                color: Color.Yellow,
-                rotation: this.Rotation,
-                origin: this.Origin + Vector2.One,
-                scale: this.Scale,
-                effects: this.SpriteEffect,
-                layerDepth: 0
-            );*/
-
-            spriteBatch.DrawRectangle((RectangleF) this.Bounds, Color.Red, 1f, 0);
-            //spriteBatch.DrawCircle((CircleF) this.Bounds, 32, Color.Red, 1, 0);
+            //spriteBatch.DrawRectangle((RectangleF) this.Bounds, Color.Red, 1f, 0);
+            spriteBatch.DrawCircle((CircleF) this.Bounds, 6, Color.Red, 1, 0);
 
             spriteBatch.Draw(
                 texture: this.Texture,
@@ -261,17 +274,50 @@ namespace MonoGame.Aseprite
                 origin: this.Origin,
                 scale: this.Scale,
                 effects: this.SpriteEffect,
-                layerDepth: 0
-            );
+                layerDepth: 0);
         }
 
-        public Vector2 PenetrationVector { get; private set; }
         public void OnCollision(CollisionEventArgs collisionEventArgs)
         {
-            this.PenetrationVector = collisionEventArgs.PenetrationVector;
-            this.Color = Color.Red;
+            if(PixelPerfectCollisionCheck((AsepriteSprite) collisionEventArgs.Other))
+            {
+                this.PenetrationVector = collisionEventArgs.PenetrationVector;
+                this.Color = Color.Red;
+                return;
+            }
+            
+            this.Color = Color.Yellow;
+        }
 
-            _isColliding = true;
+        public bool PixelPerfectCollisionCheck(AsepriteSprite other)
+        {
+            Rectangle rectA = new Rectangle(
+                (int) this.Position.X,
+                (int) this.Position.Y,
+                this.Rectangle.Width,
+                this.Rectangle.Height);
+
+            Rectangle rectB = new Rectangle(
+                (int) other.Position.X,
+                (int) other.Position.Y,
+                other.Rectangle.Width,
+                other.Rectangle.Height);
+
+            int top = Math.Max(rectA.Top, rectB.Top);
+            int bottom = Math.Min(rectA.Bottom, rectB.Bottom);
+            int left = Math.Max(rectA.Left, rectB.Left);
+            int right = Math.Min(rectA.Right, rectB.Right);
+
+            for(int y = top; y < bottom; y++)
+                for(int x = left; x < right; x++)
+                {
+                    int indexA = (x - rectA.Left) + (y - rectA.Top) * rectA.Width;
+                    int indexB = (x - rectB.Left) + (y - rectB.Top) * rectB.Width;
+                    if(this.Mask[indexA] != false && other.Mask[indexB] != false)
+                        return true;
+                }
+
+            return false;            
         }
 
         public void Dispose()

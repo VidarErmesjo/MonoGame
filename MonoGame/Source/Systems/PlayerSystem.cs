@@ -32,7 +32,7 @@ namespace MonoGame
                 AsepriteSprite sprite = _spriteMapper.Get(player.Id);
 
                 sprite.Position = player.Position;
-                sprite.Bounds.Position = sprite.Position - sprite.Origin - Vector2.One;
+                sprite.Bounds.Position = sprite.Position;// - sprite.Origin;// - Vector2.One;
 
                 player.Velocity = (sprite.PenetrationVector != Vector2.Zero) ?
                     Vector2.Zero - sprite.PenetrationVector :

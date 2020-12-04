@@ -31,10 +31,10 @@ namespace MonoGame.Extended.Entities.Systems
                 samplerState: SamplerState.PointClamp,
                 transformMatrix: Core.Camera.GetViewMatrix());
 
-            var direction = new Vector2(
+            /*var direction = new Vector2(
                 (float) System.Math.Sin(MonoGame.rotation),
                 -(float) System.Math.Cos(MonoGame.rotation));
-            direction.Normalize();
+            direction.Normalize();*/
 
             foreach(var entity in ActiveEntities)
             {

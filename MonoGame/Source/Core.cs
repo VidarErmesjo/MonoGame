@@ -23,7 +23,6 @@ namespace MonoGame
 
         public static Size VirtualResolution { get; private set; }
         public static Size TargetResolution { get; private set; }
-        //public static SpriteBatch SpriteBatch { get; private set; }
         public static RenderTarget2D MainRenderTarget { get; private set; }
         public static Rectangle TargetRectangle { get; private set; }
         public static float ScaleToDevice { get; private set; }
@@ -33,7 +32,7 @@ namespace MonoGame
         public static OrthographicCamera Camera { get; private set; }
         public static BoxingViewportAdapter ViewportAdapter { get; private set; }
 
-        public static CollisionComponent CollisionComponent { get; private set; }
+        public static CollisionComponent CollisionComponent { get; set; }
 
         public static MouseState MouseState { get; private set; }
         public static MouseState PreviousMouseState { get; private set; }
@@ -117,12 +116,6 @@ namespace MonoGame
                 VirtualResolution.Width,
                 VirtualResolution.Height);
             Camera = new OrthographicCamera(ViewportAdapter);
-
-            CollisionComponent = new CollisionComponent(new RectangleF(
-                0f,
-                0f,
-                VirtualResolution.Width,
-                VirtualResolution.Height));
 
             var scaleX = VirtualResolution.Width / (float) TargetResolution.Width;
             var scaleY = VirtualResolution.Height / (float) TargetResolution.Height;

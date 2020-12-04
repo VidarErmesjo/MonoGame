@@ -31,10 +31,10 @@ namespace MonoGame.Extended.Entities.Systems
             angle.Normalize();
 
             Vector2 direction = Vector2.Zero;
-            direction.X = Core.KeyboardState.IsKeyDown(Keys.A) ? -1.0f :
-                Core.KeyboardState.IsKeyDown(Keys.D) ? 1.0f : 0.0f;  
-            direction.Y = Core.KeyboardState.IsKeyDown(Keys.W) ? -1.0f:
-                Core.KeyboardState.IsKeyDown(Keys.S) ? 1.0f : 0.0f;  
+            direction.X = Core.KeyboardState.IsKeyDown(Keys.Left) ? -1.0f :
+                Core.KeyboardState.IsKeyDown(Keys.Right) ? 1.0f : 0.0f;  
+            direction.Y = Core.KeyboardState.IsKeyDown(Keys.Up) ? -1.0f:
+                Core.KeyboardState.IsKeyDown(Keys.Down) ? 1.0f : 0.0f;  
             direction.Normalize();
 
             //if(!direction.IsNaN())
@@ -47,7 +47,9 @@ namespace MonoGame.Extended.Entities.Systems
                 PlayerComponent player = _playerMapper.Get(entity);
 
                 //sprite.Velocity = !direction.IsNaN() ? direction * Core.SpriteSize * Core.SpriteScale : Vector2.Zero;
-                player.Velocity = !direction.IsNaN() ? direction * Core.SpriteSize * Core.SpriteScale * elapsedSeconds : Vector2.Zero;
+                player.Velocity = !direction.IsNaN() ?
+                    direction * Core.SpriteSize * Core.SpriteScale * elapsedSeconds : 
+                    Vector2.Zero; //-player.Velocity * elapsedSeconds; //Vector2.Zero;
                 //Core.Camera.Move(player.Velocity * elapsedSeconds);
                 sprite.SpriteEffect = SpriteEffects.FlipVertically;
                 //sprite.Play((!direction.IsNaN() ? "Walk" : "Idle"));
