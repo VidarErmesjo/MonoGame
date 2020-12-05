@@ -28,7 +28,6 @@ namespace MonoGame.Aseprite
         public Texture2D Texture { get; private set; }
         public RenderTarget2D Outline { get; private set; }
         public Rectangle Rectangle { get; private set; }
-        public IShapeF Bounds { get; private set; }
         public Vector2 PenetrationVector { get; private set; }
 
         public Vector2 Position { get; set; }
@@ -37,15 +36,38 @@ namespace MonoGame.Aseprite
         public float Scale { get; set; }
         public float Rotation { get; set; }
         public SpriteEffects SpriteEffect { get; set; }
+        public IShapeF Bounds
+        {
+            get
+            {
+                double rotation = Math.Abs(this.Rotation % (Math.PI / 2));
+                double cos = Math.Cos(rotation);
+                double sin = Math.Sin(rotation);
+
+                Vector2 sacledBounds = new Vector2(
+                    (float) Math.Abs(this.Rectangle.Width * cos + this.Rectangle.Height * sin),
+                    (float) Math.Abs(this.Rectangle.Width * sin + this.Rectangle.Height * cos));
+                Vector2 scaledOrigin = new Vector2(
+                    (float) Math.Abs(this.Origin.X * cos + this.Origin.Y * sin),
+                    (float) Math.Abs(this.Origin.X * sin + this.Origin.Y * cos));
+
+                return new RectangleF(
+                    this.Position - scaledOrigin * this.Scale,
+                    new Size2(
+                        sacledBounds.X * this.Scale,
+                        sacledBounds.Y * this.Scale));
+            }
+        }
+
         public Matrix Transform
         {
             get
             {
-                return
-                    Matrix.CreateTranslation(new Vector3(-this.Origin, 0)) *
+                return Matrix.Identity *
+                    Matrix.CreateTranslation(-this.Origin.X, -this.Origin.Y, 0f) *
+                    Matrix.CreateScale(new Vector3(this.Scale, this.Scale, 1f)) *
                     Matrix.CreateRotationZ(this.Rotation) *
-                    Matrix.CreateScale(this.Scale) *
-                    Matrix.CreateTranslation(new Vector3(this.Position, 0));
+                    Matrix.CreateTranslation(this.Position.X, this.Position.Y, 0f);
             }
         }
 
@@ -188,16 +210,7 @@ namespace MonoGame.Aseprite
                 this.Scale = 1f;
             }
 
-            // Common
-            this.Bounds = new RectangleF(
-                this.Position - this.Origin,// - Vector2.One,
-                new Size2(
-                    this.Rectangle.Width + 0,
-                    this.Rectangle.Height + 0));
-
-            this.Bounds = new CircleF(
-                Point2.Zero,
-                (float) System.Math.Sqrt(this.Origin.X * this.Origin.X + this.Origin.Y * this.Origin.Y));
+            this.Scale = 1f;
 
             /*this.Outline = new RenderTarget2D(
                 Core.GraphicsDeviceManager.GraphicsDevice,
@@ -260,10 +273,9 @@ namespace MonoGame.Aseprite
             this.PenetrationVector = Vector2.Zero;
         }
 
-        public void Render(SpriteBatch spriteBatch)
+        public void Draw(SpriteBatch spriteBatch)
         {
-            //spriteBatch.DrawRectangle((RectangleF) this.Bounds, Color.Red, 1f, 0);
-            spriteBatch.DrawCircle((CircleF) this.Bounds, 6, Color.Red, 1, 0);
+            spriteBatch.DrawRectangle((RectangleF) this.Bounds, Color.Red, 1f, 0);
 
             spriteBatch.Draw(
                 texture: this.Texture,
@@ -289,33 +301,80 @@ namespace MonoGame.Aseprite
             this.Color = Color.Yellow;
         }
 
+        public bool OutlinePerfectCollisionCheck(AsepriteSprite other)
+        {
+            // Trace sprite edges => polygon => check for intersection ??
+            return false;
+        }
+
         public bool PixelPerfectCollisionCheck(AsepriteSprite other)
         {
-            Rectangle rectA = new Rectangle(
+            // New
+            bool swap = this.Rectangle.Width * this.Rectangle.Height > other.Rectangle.Width * other.Rectangle.Height;
+
+            Matrix A = !swap ? this.Transform : other.Transform;
+            Matrix B = !swap ? other.Transform : this.Transform;
+            int widthA = !swap ? this.Rectangle.Width : other.Rectangle.Width;
+            int widthB = !swap ? other.Rectangle.Width : this.Rectangle.Width;
+            int heightA = !swap ? this.Rectangle.Height : other.Rectangle.Height;
+            int heightB = !swap ? other.Rectangle.Height : this.Rectangle.Height;
+            bool[] dataA = !swap ? this.Mask : other.Mask;
+            bool[] dataB = !swap ? other.Mask : this.Mask;
+
+            Matrix inverseB = Matrix.Invert(B);
+            Matrix AB = A * inverseB;
+
+            Vector2 stepX = Vector2.TransformNormal(Vector2.UnitX, AB);
+            Vector2 stepY = Vector2.TransformNormal(Vector2.UnitY, AB);
+
+            Vector2 startOfRow = Vector2.Transform(Vector2.Zero, AB);
+
+            for(int yA = 0; yA < heightA; yA++)
+            {
+                Vector2 positionB = startOfRow;
+                for(int xA = 0; xA < widthA; xA++)
+                {
+                    int xB = (int) Math.Round(positionB.X);
+                    int yB = (int) Math.Round(positionB.Y);
+
+                    if(0 <= xB && xB < widthB && 0 <= yB && yB < heightB)
+                        if(dataA[xA + yA * widthA] && dataB[xB + yB * widthB])
+                            return true;
+
+                    positionB += stepX;
+                }
+
+                startOfRow += stepY;
+            }
+
+            // Old
+            /*Rectangle rectA = new Rectangle(
                 (int) this.Position.X,
                 (int) this.Position.Y,
-                this.Rectangle.Width,
-                this.Rectangle.Height);
+                (int) (this.Rectangle.Width * this.Scale),
+                (int) (this.Rectangle.Height * this.Scale));
 
             Rectangle rectB = new Rectangle(
                 (int) other.Position.X,
                 (int) other.Position.Y,
-                other.Rectangle.Width,
-                other.Rectangle.Height);
+                (int) (other.Rectangle.Width * other.Scale),
+                (int) (other.Rectangle.Height * other.Scale));
 
             int top = Math.Max(rectA.Top, rectB.Top);
             int bottom = Math.Min(rectA.Bottom, rectB.Bottom);
             int left = Math.Max(rectA.Left, rectB.Left);
-            int right = Math.Min(rectA.Right, rectB.Right);
+            int right = Math.Min(rectA.Right, rectB.Right);     
 
+            // Not working perfect for scale other than 1 nor rotation
             for(int y = top; y < bottom; y++)
                 for(int x = left; x < right; x++)
                 {
-                    int indexA = (x - rectA.Left) + (y - rectA.Top) * rectA.Width;
-                    int indexB = (x - rectB.Left) + (y - rectB.Top) * rectB.Width;
-                    if(this.Mask[indexA] != false && other.Mask[indexB] != false)
+                    int indexA = ((x - rectA.Left) + (y - rectA.Top) * rectA.Width) % this.Mask.Length;
+                    int indexB = ((x - rectB.Left) + (y - rectB.Top) * rectB.Width) % other.Mask.Length;
+                    
+                    if(this.Mask[indexA] && other.Mask[indexB])
                         return true;
-                }
+                }*/
 
             return false;            
         }

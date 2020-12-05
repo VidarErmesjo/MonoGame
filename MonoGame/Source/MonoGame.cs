@@ -145,7 +145,7 @@ namespace MonoGame
             if(Core.LowResolution)
                 Core.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(Core.MainRenderTarget);
 
-            Core.GraphicsDeviceManager.GraphicsDevice.Clear(Color.Black);
+            Core.GraphicsDeviceManager.GraphicsDevice.Clear(Color.Transparent);
             //World.Draw(gameTime);
             base.Draw(gameTime);
 

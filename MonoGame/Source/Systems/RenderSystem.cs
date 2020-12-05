@@ -27,7 +27,7 @@ namespace MonoGame.Extended.Entities.Systems
         {
             _spriteBatch.Begin(
                 sortMode: SpriteSortMode.Deferred,
-                blendState: BlendState.NonPremultiplied,
+                blendState: BlendState.Additive,
                 samplerState: SamplerState.PointClamp,
                 transformMatrix: Core.Camera.GetViewMatrix());
 
@@ -41,7 +41,7 @@ namespace MonoGame.Extended.Entities.Systems
                 WeaponComponent weapon = _weaponMapper.Get(entity);
                 AsepriteSprite sprite = _spriteMapper.Get(entity);
 
-                sprite.Render(_spriteBatch);
+                sprite.Draw(_spriteBatch);
 
                 if(weapon.isCharging)
                 {
