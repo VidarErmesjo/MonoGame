@@ -14,6 +14,6 @@ namespace MonoGame.Components
         public int entityId;
         public IShapeF Head;
         public IShapeF Torso;
-        public IList<IShapeF> Limbs;
+        public IList<IShapeF> Slice;
     }
 }

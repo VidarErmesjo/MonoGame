@@ -77,7 +77,7 @@ namespace MonoGame
             if(_initialized)
                 return;
 
-            Window.AllowUserResizing = true;
+            Window.AllowUserResizing = false;
 
             LowResolution = false;
 

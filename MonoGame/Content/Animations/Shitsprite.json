@@ -1,6 +1,6 @@
 { "frames": [
    {
-    "filename": "Shitsprite_idle 0.ase",
+    "filename": "Shitsprite 0.ase",
     "frame": { "x": 0, "y": 0, "w": 16, "h": 16 },
     "rotated": false,
     "trimmed": false,
@@ -9,7 +9,7 @@
     "duration": 100
    },
    {
-    "filename": "Shitsprite_idle 1.ase",
+    "filename": "Shitsprite 1.ase",
     "frame": { "x": 16, "y": 0, "w": 16, "h": 16 },
     "rotated": false,
     "trimmed": false,
@@ -18,7 +18,7 @@
     "duration": 300
    },
    {
-    "filename": "Shitsprite_idle 2.ase",
+    "filename": "Shitsprite 2.ase",
     "frame": { "x": 32, "y": 0, "w": 16, "h": 16 },
     "rotated": false,
     "trimmed": false,
@@ -27,7 +27,7 @@
     "duration": 100
    },
    {
-    "filename": "Shitsprite_idle 3.ase",
+    "filename": "Shitsprite 3.ase",
     "frame": { "x": 48, "y": 0, "w": 16, "h": 16 },
     "rotated": false,
     "trimmed": false,
@@ -51,6 +51,10 @@
    { "name": "Layer", "opacity": 255, "blendMode": "normal" }
   ],
   "slices": [
+   { "name": "Body", "color": "#ff0000ff", "keys": [{ "frame": 0, "bounds": {"x": 0, "y": 8, "w": 16, "h": 6 }, "pivot": {"x": 0, "y": 0 } }, { "frame": 1, "bounds": {"x": 0, "y": 9, "w": 16, "h": 6 }, "pivot": {"x": 0, "y": 0 } }, { "frame": 2, "bounds": {"x": 0, "y": 8, "w": 16, "h": 6 }, "pivot": {"x": 0, "y": 0 } }, { "frame": 3, "bounds": {"x": 0, "y": 9, "w": 16, "h": 6 }, "pivot": {"x": 0, "y": 0 } }] },
+   { "name": "Left leg", "color": "#ff0000ff", "keys": [{ "frame": 0, "bounds": {"x": 1, "y": 14, "w": 6, "h": 2 }, "pivot": {"x": 0, "y": 0 } }, { "frame": 1, "bounds": {"x": 1, "y": 15, "w": 6, "h": 1 }, "pivot": {"x": 0, "y": 0 } }, { "frame": 2, "bounds": {"x": 1, "y": 14, "w": 6, "h": 2 }, "pivot": {"x": 0, "y": 0 } }, { "frame": 3, "bounds": {"x": 3, "y": 15, "w": 4, "h": 1 }, "pivot": {"x": 0, "y": 0 } }] },
+   { "name": "Right leg", "color": "#ff0000ff", "keys": [{ "frame": 0, "bounds": {"x": 9, "y": 14, "w": 6, "h": 2 }, "pivot": {"x": 0, "y": 0 } }, { "frame": 1, "bounds": {"x": 9, "y": 15, "w": 4, "h": 1 }, "pivot": {"x": 0, "y": 0 } }, { "frame": 2, "bounds": {"x": 9, "y": 14, "w": 6, "h": 2 }, "pivot": {"x": 0, "y": 0 } }, { "frame": 3, "bounds": {"x": 9, "y": 15, "w": 6, "h": 1 }, "pivot": {"x": 0, "y": 0 } }] },
+   { "name": "Head", "color": "#ff0000ff", "keys": [{ "frame": 0, "bounds": {"x": 2, "y": 0, "w": 12, "h": 8 }, "pivot": {"x": 0, "y": 0 } }, { "frame": 1, "bounds": {"x": 2, "y": 1, "w": 12, "h": 8 }, "pivot": {"x": 0, "y": 0 } }, { "frame": 2, "bounds": {"x": 2, "y": 0, "w": 12, "h": 8 }, "pivot": {"x": 0, "y": 0 } }, { "frame": 3, "bounds": {"x": 2, "y": 1, "w": 12, "h": 8 }, "pivot": {"x": 0, "y": 0 } }] }
   ]
  }
 }

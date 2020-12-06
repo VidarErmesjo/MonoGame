@@ -17,7 +17,7 @@ namespace MonoGame.Aseprite
         private readonly Dictionary<string, List<Rectangle>> _animations;
         private readonly Dictionary<string, List<Color[]>> _data;
         private readonly Dictionary<string, List<bool[]>> _mask;
-        private readonly Dictionary<string, List<Rectangle>> _slices;
+        private readonly List<Slice> _slices;
         private readonly AsepriteData _asepriteData;
         private Color[,] _pixelMap = null;
         private string _currentAnimation = "Idle";
@@ -26,13 +26,50 @@ namespace MonoGame.Aseprite
         private bool _hasSlices = false;
 
         public Texture2D Texture { get; private set; }
-        public RenderTarget2D Outline { get; private set; }
-        public Rectangle Rectangle { get; private set; }
+        public Rectangle Rectangle
+        {
+            get
+            {
+                return _isAnimated ?
+                    _animations[_currentAnimation].ToArray().ElementAt(_currentFrame)
+                    :
+                    new Rectangle(0, 0, Texture.Width, Texture.Height);
+            }
+        }
         public Vector2 PenetrationVector { get; private set; }
 
         public Vector2 Position { get; set; }
-        public Vector2 Origin { get; set; }
-        public Color Color { get; set; }
+        public Vector2 Origin
+        { 
+            get
+            {
+                return _isAnimated ?
+                    new Vector2(
+                        _animations[_currentAnimation].ToArray().ElementAt(_currentFrame).Width * 0.5f,
+                        _animations[_currentAnimation].ToArray().ElementAt(_currentFrame).Height * 0.5f)
+                    :
+                    new Vector2(
+                        Texture.Width * 0.5f,
+                        Texture.Height * 0.5f);
+            }
+        }
+
+        public Size Size
+        {
+             get
+             {
+                 return _isAnimated ?
+                    new Size(
+                        _animations[_currentAnimation].ToArray().ElementAt(_currentFrame).Width,
+                        _animations[_currentAnimation].ToArray().ElementAt(_currentFrame).Height)
+                    :
+                    new Size(
+                        this.Texture.Width,
+                        this.Texture.Height);
+             }
+        }
+
+        public Color Color { get; private set; }
         public float Scale { get; set; }
         public float Rotation { get; set; }
         public SpriteEffects SpriteEffect { get; set; }
@@ -40,7 +77,7 @@ namespace MonoGame.Aseprite
         {
             get
             {
-                double rotation = Math.Abs(this.Rotation % (Math.PI / 2));
+                double rotation = Math.Abs(this.Rotation % (Math.PI * 0.5f));
                 double cos = Math.Cos(rotation);
                 double sin = Math.Sin(rotation);
 
@@ -90,6 +127,8 @@ namespace MonoGame.Aseprite
         // Experimental
         public Components.Collision Collision { get; private set; }
 
+        public List<Rectangle> rectangles { get; private set; }
+
         public AsepriteSprite(string name)
         {
             name = name.Replace('\\', '/').Split('/').Last().Split('.').First();
@@ -117,18 +156,8 @@ namespace MonoGame.Aseprite
                 if(_asepriteData.meta.frameTags != null)
                     _isAnimated = true;
 
-                if(_asepriteData.meta.slizes != null)
+                if(_asepriteData.meta.slices != null)
                     _hasSlices = true;
-
-                this.Rectangle = new Rectangle(
-                    0,
-                    0,
-                    _asepriteData.frames[0].sourceSize.w,
-                    _asepriteData.frames[0].sourceSize.h); 
-
-                this.Origin = new Vector2(
-                    _asepriteData.frames[0].sourceSize.w * 0.5f,
-                    _asepriteData.frames[0].sourceSize.h * 0.5f);
 
                 this.Scale = _asepriteData.meta.scale;
 
@@ -184,11 +213,27 @@ namespace MonoGame.Aseprite
 
                 if(_hasSlices)
                 {
-                    // Slizes for multiple collision boxes?
-                    _slices = new Dictionary<string, List<Rectangle>>();
-                    foreach(var slize in _asepriteData.meta.slizes.ToArray())
+                    _slices = new List<Slice>();
+                    foreach(var slice in _asepriteData.meta.slices.ToArray())
                     {
+                        Slice tempSlice = new Slice();
+                        tempSlice.Name = slice.name;
+                        //tempSlice.Color = (Color) slice.color;
+                        foreach(var key in slice.keys)
+                        {
+                            Key tempKey = new Key();
+                            tempKey.Frame = key.frame;
+                            tempKey.Bounds = new Rectangle(
+                                key.bounds.x,
+                                key.bounds.y,
+                                key.bounds.w,
+                                key.bounds.h);
+                            tempKey.Pivot = new Point(key.pivot.x, key.pivot.y);
 
+                            tempSlice.Keys.Add(tempKey);
+                        }
+
+                        _slices.Add(tempSlice);
                     }
                 }
             }
@@ -197,35 +242,31 @@ namespace MonoGame.Aseprite
                 // Revert to static sprite
                 _isAnimated = false;
 
-                this.Rectangle = new Rectangle(
-                    0,
-                    0,
-                    Texture.Width,
-                    Texture.Height);
+                // Pixel data
+                Color[] tempData = new Color[this.Texture.Width * this.Texture.Height];
+                this.Texture.GetData<Color>(0, this.Rectangle, tempData, 0, Texture.Width * Texture.Height);
+                List<Color[]> data = new List<Color[]>();
+                data.Add(tempData);
 
-                this.Origin = new Vector2(
-                    Texture.Width * 0.5f,
-                    Texture.Height * 0.5f);
+                // Collision mask
+                bool[] tempMask = new bool[this.Texture.Width * this.Texture.Height];
+                for(int index = 0; index < tempData.Length; index++)
+                    tempMask[index] = tempData[index].A != 0 ? true : false;
+                List<bool[]> mask = new List<bool[]>();
+                mask.Add(tempMask);
+
+                _data.Add(_currentAnimation, data);
+                _mask.Add(_currentAnimation, mask);
 
                 this.Scale = 1f;
             }
 
             this.Scale = 1f;
 
-            /*this.Outline = new RenderTarget2D(
-                Core.GraphicsDeviceManager.GraphicsDevice,
-                this.Rectangle.Width + 2,
-                this.Rectangle.Height + 2);*/
-
-            /*Core.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(this.Outline);
-            SpriteBatch temp = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
-            temp.Begin(samplerState: SamplerState.PointClamp);
-            temp.DrawRectangle((RectangleF) this.Bounds, Color.White, 1);
-            temp.End();
-            Core.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(null);*/
-
             //Extended.Shapes.Polygon polygon;
             //polygon = new Extended.Shapes.Polygon();
+
+            rectangles = new List<Rectangle>();
         }
 
         // Same as Data?
@@ -265,17 +306,55 @@ namespace MonoGame.Aseprite
 
                 if(_currentFrame > _animations[_currentAnimation].ToArray().Length - 1)
                     _currentFrame = 0;
-
-                this.Rectangle = _animations[_currentAnimation].ToArray().ElementAt(_currentFrame);
             }
 
+            /*if(_hasSlices)
+            {
+                foreach(var slice in _slices)
+                {
+                    slice.Keys[_currentFrame].Bounds = new Rectangle(
+                        slice.Keys[_currentFrame].Bounds.X + (int) this.Bounds.Position.X,
+                        slice.Keys[_currentFrame].Bounds.Y + (int) this.Bounds.Position.Y,
+                        slice.Keys[_currentFrame].Bounds.Width,
+                        slice.Keys[_currentFrame].Bounds.Height);
+                }
+            }*/
+
             this.Color = Color.White;
+            this.SpriteEffect = SpriteEffects.FlipHorizontally & SpriteEffects.FlipHorizontally;
             this.PenetrationVector = Vector2.Zero;
+            //rectangles.Clear();
         }
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.DrawRectangle((RectangleF) this.Bounds, Color.Red, 1f, 0);
+            spriteBatch.DrawRectangle((RectangleF) this.Bounds, Color.Yellow, 0.5f, 0);
+
+            if(_hasSlices)
+                foreach(var slice in _slices)
+                {
+                    spriteBatch.DrawRectangle(
+                        new RectangleF(
+                            slice.Keys[_currentFrame].Bounds.X + this.Bounds.Position.X,
+                            slice.Keys[_currentFrame].Bounds.Y + this.Bounds.Position.Y,
+                            slice.Keys[_currentFrame].Bounds.Width,
+                            slice.Keys[_currentFrame].Bounds.Height),
+                        Color.Red,
+                        0.5f,
+                        0);                   
+                }
+                    /*foreach(var key in slice.Keys)
+                    {
+                        spriteBatch.DrawRectangle(
+                            new RectangleF(
+                                key.Bounds.X + this.Bounds.Position.X,
+                                key.Bounds.Y + this.Bounds.Position.Y,
+                                key.Bounds.Width,
+                                key.Bounds.Height),
+                            Color.Red,
+                            1f,
+                            0);
+                    }*/
 
             spriteBatch.Draw(
                 texture: this.Texture,
@@ -287,23 +366,104 @@ namespace MonoGame.Aseprite
                 scale: this.Scale,
                 effects: this.SpriteEffect,
                 layerDepth: 0);
+
+            foreach(var rectangle in rectangles)
+                spriteBatch.DrawRectangle(rectangle, Color.Green, 1f, 0);
         }
 
         public void OnCollision(CollisionEventArgs collisionEventArgs)
         {
-            if(PixelPerfectCollisionCheck((AsepriteSprite) collisionEventArgs.Other))
+            if(MultiBoundsCollisionCheck((AsepriteSprite) collisionEventArgs.Other))
             {
                 this.PenetrationVector = collisionEventArgs.PenetrationVector;
                 this.Color = Color.Red;
                 return;
             }
+            //if(PolygonPerfectCollisionCheck((AsepriteSprite) collisionEventArgs.Other));
+            /*if(PixelPerfectCollisionCheck((AsepriteSprite) collisionEventArgs.Other))
+            {
+                this.PenetrationVector = collisionEventArgs.PenetrationVector;
+                this.Color = Color.Red;
+                return;
+            }*/
             
             this.Color = Color.Yellow;
         }
 
-        public bool OutlinePerfectCollisionCheck(AsepriteSprite other)
+        public bool MultiBoundsCollisionCheck(AsepriteSprite other)
+        {
+            //CollisionComponent collisionComponent = new CollisionComponent((RectangleF) this.Bounds);
+            //collisionComponent.Update(gameTime);
+
+            foreach(var A in this._slices)
+            {
+                foreach(var B in other._slices)
+                {
+                    RectangleF rectA = new RectangleF(
+                        A.Keys[this._currentFrame].Bounds.X + this.Bounds.Position.X,
+                        A.Keys[this._currentFrame].Bounds.Y + this.Bounds.Position.Y,
+                        A.Keys[this._currentFrame].Bounds.Width,
+                        A.Keys[this._currentFrame].Bounds.Height);
+
+                    RectangleF rectB = new RectangleF(
+                        B.Keys[other._currentFrame].Bounds.X + other.Bounds.Position.X,
+                        B.Keys[other._currentFrame].Bounds.Y + other.Bounds.Position.Y,
+                        B.Keys[other._currentFrame].Bounds.Width,
+                        B.Keys[other._currentFrame].Bounds.Height);
+
+                    if(A != B && rectA.Intersects(rectB))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool PolygonPerfectCollisionCheck(AsepriteSprite other)
         {
             // Trace sprite edges => polygon => check for intersection ??
+            // What is wrong????
+
+            var vertices = new List<Point2>();
+            rectangles = new List<Rectangle>();
+            int beginY = 0;
+            int endY = this.Rectangle.Width;
+            bool holdY = false;
+            for(int y = 0; y < this.Rectangle.Width; y++)
+            {
+                int beginX = 0;
+                int endX = this.Rectangle.Width; // SpriteSize
+                bool holdX = false;
+                for(int x = 0; x < this.Rectangle.Height; x++)
+                {
+                    bool current = this.Mask[x + y * this.Rectangle.Width];
+
+                    if(current && !holdX)
+                    {
+                        beginX = x;
+                        holdX = true;
+                    }
+
+                    if(!current && holdX)
+                    {
+                        endX = x;
+                        var widthX = endX - beginX;
+                        if(widthX < 0)
+                            widthX = this.Rectangle.Width;
+
+                        rectangles.Add(new Rectangle(
+                            (int) (this.Position.X - this.Origin.X) + beginX,
+                            (int) (this.Position.Y - this.Origin.Y) + y,
+                            widthX,
+                            1));
+                        holdX = false;
+                    }                      
+                }
+            }
+
+            foreach(var rectangle in rectangles)
+                System.Console.WriteLine(rectangle);
+
             return false;
         }
 
@@ -393,7 +553,6 @@ namespace MonoGame.Aseprite
             if(disposing)
             {
                 this.Texture.Dispose();
-                this.Outline.Dispose();
             }
 
             isDisposing = true;
