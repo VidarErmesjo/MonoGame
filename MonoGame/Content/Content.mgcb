@@ -10,12 +10,11 @@
 
 #-------------------------------- References --------------------------------#
 
-/reference:..\..\..\..\..\..\.nuget\packages\monogame.aseprite\1.2.2\contentFiles\cs\netstandard2.0\MonoGame.Aseprite.ContentPipeline.References\MonoGame.Aseprite.ContentPipeline.dll
 
 #---------------------------------- Content ---------------------------------#
 
-#begin Animations/Shitsprite.json
-/copy:Animations/Shitsprite.json
+#begin Aseprite/Shitsprite.json
+/copy:Aseprite/Shitsprite.json
 
 #begin Fonts/Arial.spritefont
 /importer:FontDescriptionImporter

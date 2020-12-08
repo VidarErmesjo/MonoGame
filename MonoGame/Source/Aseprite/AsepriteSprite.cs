@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended;
 using MonoGame.Extended.Collisions;
+using MonoGame.Extended.Shapes;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Linq;
 using Newtonsoft.Json;
 
 namespace MonoGame.Aseprite
-{
+{   // Change name to SuperSprite, HyperSprite or just Sprite??
     public class AsepriteSprite : ICollisionActor, IDisposable
     {
         private bool isDisposing = false;
@@ -102,9 +103,55 @@ namespace MonoGame.Aseprite
             {
                 return Matrix.Identity *
                     Matrix.CreateTranslation(-this.Origin.X, -this.Origin.Y, 0f) *
-                    Matrix.CreateScale(new Vector3(this.Scale, this.Scale, 1f)) *
                     Matrix.CreateRotationZ(this.Rotation) *
+                    Matrix.CreateScale(this.Scale) *
                     Matrix.CreateTranslation(this.Position.X, this.Position.Y, 0f);
+            }
+        }
+
+        public List<Polygon> Polygons
+        {
+            get
+            {
+                if(_hasSlices)
+                {
+                    List<Polygon> polygons = new List<Polygon>();
+                    foreach(var slice in _slices)
+                    {
+                        List<Vector2> vectorList = new List<Vector2>(4);
+                        vectorList.Add(
+                            Vector2.Transform(
+                                new Vector2(
+                                    slice.Keys[_currentFrame].Bounds.Left,
+                                    slice.Keys[_currentFrame].Bounds.Top),
+                                this.Transform));
+                        vectorList.Add(
+                            Vector2.Transform(
+                                new Vector2(
+                                    slice.Keys[_currentFrame].Bounds.Right,
+                                    slice.Keys[_currentFrame].Bounds.Top),
+                                this.Transform));
+                        vectorList.Add(
+                            Vector2.Transform(
+                                new Vector2(
+                                    slice.Keys[_currentFrame].Bounds.Right,
+                                    slice.Keys[_currentFrame].Bounds.Bottom),
+                                this.Transform));
+
+                        vectorList.Add(
+                            Vector2.Transform(
+                                new Vector2(
+                                    slice.Keys[_currentFrame].Bounds.Left,
+                                    slice.Keys[_currentFrame].Bounds.Bottom),
+                                this.Transform));
+
+                        polygons.Add(new Polygon(vectorList));
+                    }
+
+                    return polygons;
+                }
+
+                return null;
             }
         }
 
@@ -126,8 +173,6 @@ namespace MonoGame.Aseprite
 
         // Experimental
         public Components.Collision Collision { get; private set; }
-
-        public List<Rectangle> rectangles { get; private set; }
 
         public AsepriteSprite(string name)
         {
@@ -151,7 +196,7 @@ namespace MonoGame.Aseprite
             {
                 // Check for .json Asprite data
                _asepriteData = JsonConvert.DeserializeObject<AsepriteData>(
-                    File.ReadAllText(Path.Combine("Content/Animations/" + name + ".json")));
+                    File.ReadAllText(Path.Combine("Content/Aseprite/" + name + ".json")));
                
                 if(_asepriteData.meta.frameTags != null)
                     _isAnimated = true;
@@ -261,12 +306,7 @@ namespace MonoGame.Aseprite
                 this.Scale = 1f;
             }
 
-            this.Scale = 1f;
-
-            //Extended.Shapes.Polygon polygon;
-            //polygon = new Extended.Shapes.Polygon();
-
-            rectangles = new List<Rectangle>();
+            //this.Scale = 4f; // Remove when done testing
         }
 
         // Same as Data?
@@ -308,54 +348,36 @@ namespace MonoGame.Aseprite
                     _currentFrame = 0;
             }
 
-            /*if(_hasSlices)
-            {
-                foreach(var slice in _slices)
-                {
-                    slice.Keys[_currentFrame].Bounds = new Rectangle(
-                        slice.Keys[_currentFrame].Bounds.X + (int) this.Bounds.Position.X,
-                        slice.Keys[_currentFrame].Bounds.Y + (int) this.Bounds.Position.Y,
-                        slice.Keys[_currentFrame].Bounds.Width,
-                        slice.Keys[_currentFrame].Bounds.Height);
-                }
-            }*/
-
             this.Color = Color.White;
-            this.SpriteEffect = SpriteEffects.FlipHorizontally & SpriteEffects.FlipHorizontally;
             this.PenetrationVector = Vector2.Zero;
-            //rectangles.Clear();
         }
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.DrawRectangle((RectangleF) this.Bounds, Color.Yellow, 0.5f, 0);
+            // Slice mesh
+            /*if(_hasSlices)
+                foreach(var polygon in this.Polygons)
+                    spriteBatch.DrawPolygon(Vector2.Zero, polygon, Color.Red, 1f);*/
 
-            if(_hasSlices)
-                foreach(var slice in _slices)
-                {
-                    spriteBatch.DrawRectangle(
-                        new RectangleF(
-                            slice.Keys[_currentFrame].Bounds.X + this.Bounds.Position.X,
-                            slice.Keys[_currentFrame].Bounds.Y + this.Bounds.Position.Y,
-                            slice.Keys[_currentFrame].Bounds.Width,
-                            slice.Keys[_currentFrame].Bounds.Height),
-                        Color.Red,
-                        0.5f,
-                        0);                   
-                }
-                    /*foreach(var key in slice.Keys)
-                    {
-                        spriteBatch.DrawRectangle(
-                            new RectangleF(
-                                key.Bounds.X + this.Bounds.Position.X,
-                                key.Bounds.Y + this.Bounds.Position.Y,
-                                key.Bounds.Width,
-                                key.Bounds.Height),
-                            Color.Red,
-                            1f,
-                            0);
-                    }*/
+            // Inner bounds
+            /*if(_hasSlices && this.Rotation != 0f)
+                foreach(var polygon in this.Polygons)
+                    spriteBatch.DrawRectangle((RectangleF) polygon.BoundingRectangle, Color.Green, 1f, 0);*/
 
+            // SLice vertices
+            /*if(_hasSlices)
+                foreach(var polygon in this.Polygons)
+                    foreach(var vertex in polygon.Vertices)
+                        spriteBatch.DrawPoint(
+                            vertex.X,
+                            vertex.Y,
+                            Color.Yellow,
+                            1f);*/
+
+            // Bounding box
+            //spriteBatch.DrawRectangle((RectangleF) this.Bounds, Color.Yellow, 1f, 0);
+
+            // Sprite
             spriteBatch.Draw(
                 texture: this.Texture,
                 position: this.Position,
@@ -366,109 +388,87 @@ namespace MonoGame.Aseprite
                 scale: this.Scale,
                 effects: this.SpriteEffect,
                 layerDepth: 0);
-
-            foreach(var rectangle in rectangles)
-                spriteBatch.DrawRectangle(rectangle, Color.Green, 1f, 0);
         }
 
         public void OnCollision(CollisionEventArgs collisionEventArgs)
         {
-            if(MultiBoundsCollisionCheck((AsepriteSprite) collisionEventArgs.Other))
+            // Outer bounds
+            if(_hasSlices && PolygonPerfectOnCollision(collisionEventArgs))
             {
                 this.PenetrationVector = collisionEventArgs.PenetrationVector;
                 this.Color = Color.Red;
                 return;
             }
-            //if(PolygonPerfectCollisionCheck((AsepriteSprite) collisionEventArgs.Other));
-            /*if(PixelPerfectCollisionCheck((AsepriteSprite) collisionEventArgs.Other))
+            else if(!_hasSlices && PixelPerfectOnCollision(collisionEventArgs))
             {
                 this.PenetrationVector = collisionEventArgs.PenetrationVector;
                 this.Color = Color.Red;
                 return;
-            }*/
+            }
             
             this.Color = Color.Yellow;
         }
 
-        public bool MultiBoundsCollisionCheck(AsepriteSprite other)
+        public bool PolygonPerfectOnCollision(CollisionEventArgs collisionEventArgs)
         {
-            //CollisionComponent collisionComponent = new CollisionComponent((RectangleF) this.Bounds);
-            //collisionComponent.Update(gameTime);
+            AsepriteSprite other = (AsepriteSprite) collisionEventArgs.Other;
 
-            foreach(var A in this._slices)
-            {
-                foreach(var B in other._slices)
-                {
-                    RectangleF rectA = new RectangleF(
-                        A.Keys[this._currentFrame].Bounds.X + this.Bounds.Position.X,
-                        A.Keys[this._currentFrame].Bounds.Y + this.Bounds.Position.Y,
-                        A.Keys[this._currentFrame].Bounds.Width,
-                        A.Keys[this._currentFrame].Bounds.Height);
-
-                    RectangleF rectB = new RectangleF(
-                        B.Keys[other._currentFrame].Bounds.X + other.Bounds.Position.X,
-                        B.Keys[other._currentFrame].Bounds.Y + other.Bounds.Position.Y,
-                        B.Keys[other._currentFrame].Bounds.Width,
-                        B.Keys[other._currentFrame].Bounds.Height);
-
-                    if(A != B && rectA.Intersects(rectB))
-                        return true;
-                }
-            }
+            foreach(var A in this.Polygons)
+                foreach(var B in other.Polygons)
+                    if(A != B && A.BoundingRectangle.Intersects(B.BoundingRectangle))
+                        return PolygonIntersects(A, B);
 
             return false;
         }
 
-        public bool PolygonPerfectCollisionCheck(AsepriteSprite other)
+        /// <summary>
+        /// Edge / diagonal intersection
+        /// </summarY>
+        public bool PolygonIntersects(Polygon A, Polygon B)
         {
-            // Trace sprite edges => polygon => check for intersection ??
-            // What is wrong????
-
-            var vertices = new List<Point2>();
-            rectangles = new List<Rectangle>();
-            int beginY = 0;
-            int endY = this.Rectangle.Width;
-            bool holdY = false;
-            for(int y = 0; y < this.Rectangle.Width; y++)
+            for(int shape = 0; shape < 2; shape++)
             {
-                int beginX = 0;
-                int endX = this.Rectangle.Width; // SpriteSize
-                bool holdX = false;
-                for(int x = 0; x < this.Rectangle.Height; x++)
+                if(shape == 1)
                 {
-                    bool current = this.Mask[x + y * this.Rectangle.Width];
+                    Polygon C = A;
+                    A = B;
+                    B = C;
+                }
 
-                    if(current && !holdX)
+                for(int p = 0; p < A.Vertices.Length; p++)
+                {
+                    Vector2 beginA = A.BoundingRectangle.Center;
+                    Vector2 endA = A.Vertices[p];
+
+                    for(int q = 0; q < B.Vertices.Length; q++)
                     {
-                        beginX = x;
-                        holdX = true;
+                        Vector2 beginB = B.Vertices[q];
+                        Vector2 endB = B.Vertices[(q + 1) % B.Vertices.Length];
+
+                        float h =   (endB.X - beginB.X) * (beginA.Y - endA.Y) -
+                                    (beginA.X - endA.X) * (endB.Y - beginB.Y);
+
+                        float t1 =  (beginB.Y - endB.Y) * (beginA.X - beginB.X) +
+                                    (endB.X - beginB.X) * (beginA.Y - beginB.Y);
+
+                        float t2 =  (beginA.Y - endA.Y) * (beginA.X - beginB.X) +
+                                    (endA.X - beginA.X) * (beginA.Y - beginB.Y);
+
+                        t1 /= h;
+                        t2 /= h;
+
+                        if(t1 >= 0f && t1 < 1f && t2 >= 0f && t2 < 1f)
+                            return true;
                     }
-
-                    if(!current && holdX)
-                    {
-                        endX = x;
-                        var widthX = endX - beginX;
-                        if(widthX < 0)
-                            widthX = this.Rectangle.Width;
-
-                        rectangles.Add(new Rectangle(
-                            (int) (this.Position.X - this.Origin.X) + beginX,
-                            (int) (this.Position.Y - this.Origin.Y) + y,
-                            widthX,
-                            1));
-                        holdX = false;
-                    }                      
                 }
             }
-
-            foreach(var rectangle in rectangles)
-                System.Console.WriteLine(rectangle);
-
             return false;
         }
 
-        public bool PixelPerfectCollisionCheck(AsepriteSprite other)
+        public bool PixelPerfectOnCollision(CollisionEventArgs collisionEventArgs)
         {
+            AsepriteSprite other = (AsepriteSprite) collisionEventArgs.Other;
+
             // New
             bool swap = this.Rectangle.Width * this.Rectangle.Height > other.Rectangle.Width * other.Rectangle.Height;
 

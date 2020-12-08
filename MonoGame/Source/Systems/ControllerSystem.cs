@@ -51,10 +51,10 @@ namespace MonoGame.Extended.Entities.Systems
                     direction * Core.SpriteSize * Core.SpriteScale * elapsedSeconds : 
                     Vector2.Zero; //-player.Velocity * elapsedSeconds; //Vector2.Zero;
                 //Core.Camera.Move(player.Velocity * elapsedSeconds);
-                sprite.SpriteEffect = SpriteEffects.FlipVertically;
+                //sprite.SpriteEffect = SpriteEffects.FlipVertically;
                 //sprite.Play((!direction.IsNaN() ? "Walk" : "Idle"));
                 //sprite.Position = Core.Camera.Center;
-                sprite.Rotation = angle.ToAngle();
+                sprite.Rotation = angle.ToAngle() + (float) System.Math.PI;
             }
         }
     }

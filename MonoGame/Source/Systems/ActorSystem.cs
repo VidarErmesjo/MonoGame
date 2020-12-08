@@ -32,15 +32,18 @@ namespace MonoGame
                 AsepriteSprite sprite = _spriteMapper.Get(actor.Id);
 
                 sprite.Position = actor.Position;
-                sprite.Bounds.Position = sprite.Position - sprite.Origin * sprite.Scale;// - sprite.PenetrationVector;// - Vector2.One;
+                sprite.Bounds.Position = sprite.Position - sprite.Origin * sprite.Scale;
 
-                /*actor.Velocity = (sprite.PenetrationVector != Vector2.Zero) ?
-                    Vector2.Zero - sprite.PenetrationVector :
-                    actor.Velocity;*/
+                actor.Velocity = (sprite.PenetrationVector != Vector2.Zero) ?
+                    actor.Velocity - sprite.PenetrationVector :
+                    actor.Velocity * 0.9f;
 
+                //if(actor.Velocity.LengthSquared() < 0.1f)
+                //    actor.Velocity = Vector2.Zero;
+ 
                 actor.Position += actor.Velocity * Core.SpriteSize * Core.SpriteScale * elapsedSeconds;
 
-                sprite.Play((actor.Velocity == Vector2.Zero ? "Idle" : "Walk"));
+                sprite.Play((actor.Velocity.LengthSquared() < 0.1f ? "Idle" : "Walk"));
                 sprite.Update(gameTime);
             }
         }
