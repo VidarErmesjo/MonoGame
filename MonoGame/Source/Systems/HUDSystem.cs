@@ -101,7 +101,7 @@ namespace MonoGame.Extended.Entities.Systems
                     SpriteEffects.None,
                     0);
 
-                var worldToScreen = MonoGame.player[0].Get<AsepriteSprite>().Position; //Core.Camera.WorldToScreen(MonoGame.aseprite.Position);
+                var worldToScreen = MonoGame.player[0].Get<SuperSprite>().Position; //Core.Camera.WorldToScreen(MonoGame.aseprite.Position);
                 _spriteBatch.DrawString(
                     _spriteFont,
                     "Player: " + worldToScreen.X.ToString("0") + ", " + worldToScreen.Y.ToString("0"),

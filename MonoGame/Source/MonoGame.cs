@@ -73,7 +73,7 @@ namespace MonoGame
             // Entities
             player[0] = World.CreateEntity();
             player[0].Attach(new PlayerComponent(player[0].Id, Core.Camera.Center));
-            player[0].Attach(new AsepriteSprite("Shitsprite"));
+            player[0].Attach(new SuperSprite("Shitsprite"));
             player[0].Attach(new Collision());
             player[0].Attach(new WeaponComponent(Weapon.None, 0));
 
@@ -84,7 +84,7 @@ namespace MonoGame
                     Core.VirtualResolution.Width * 0.25f,
                     Core.VirtualResolution.Height * 0.25f),
                 Vector2.Zero));
-            entity.Attach(new AsepriteSprite("Shitsprite"));
+            entity.Attach(new SuperSprite("Shitsprite"));
             entity.Attach(new Collision());
             entity.Attach(new WeaponComponent(Weapon.None, 0));
         }

@@ -1,6 +1,9 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Aseprite;
+using MonoGame.Trigonometry;
+using MonoGame.Extended.Shapes;
+using System.Collections.Generic;
 //using MonoGame.Extended.Entities;
 //using MonoGame.Extended.Entities.Systems;
 
@@ -10,9 +13,9 @@ namespace MonoGame.Extended.Entities.Systems
     {
         private readonly SpriteBatch _spriteBatch;
         private ComponentMapper<WeaponComponent> _weaponMapper;
-        private ComponentMapper<AsepriteSprite> _spriteMapper;
+        private ComponentMapper<SuperSprite> _spriteMapper;
 
-        public RenderSystem() : base(Aspect.All(typeof(AsepriteSprite), typeof(WeaponComponent)))
+        public RenderSystem() : base(Aspect.All(typeof(SuperSprite), typeof(WeaponComponent)))
         {
             _spriteBatch = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
         }
@@ -20,7 +23,7 @@ namespace MonoGame.Extended.Entities.Systems
         public override void Initialize(IComponentMapperService mapperService)
         {
             _weaponMapper = mapperService.GetMapper<WeaponComponent>();
-            _spriteMapper = mapperService.GetMapper<AsepriteSprite>();
+            _spriteMapper = mapperService.GetMapper<SuperSprite>();
         }
 
         public override void Draw(GameTime gameTime)
@@ -39,7 +42,7 @@ namespace MonoGame.Extended.Entities.Systems
             foreach(var entity in ActiveEntities)
             {
                 WeaponComponent weapon = _weaponMapper.Get(entity);
-                AsepriteSprite sprite = _spriteMapper.Get(entity);
+                SuperSprite sprite = _spriteMapper.Get(entity);
 
                 sprite.Draw(_spriteBatch);
 

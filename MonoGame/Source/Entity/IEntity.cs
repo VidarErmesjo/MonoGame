@@ -16,7 +16,7 @@ namespace MonoGame
         public string Type;
         public string Name;
 
-        public AsepriteSprite sprite;
+        public SuperSprite sprite;
 
         public Vector2 Position;
         public Vector2 Velocity;

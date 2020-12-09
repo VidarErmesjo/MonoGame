@@ -11,16 +11,16 @@ namespace MonoGame
     public class ActorSystem : EntityUpdateSystem
     {
         private ComponentMapper<ActorComponent> _actorMapper;
-        private ComponentMapper<AsepriteSprite> _spriteMapper;
+        private ComponentMapper<SuperSprite> _spriteMapper;
 
-        public ActorSystem() : base(Aspect.All(typeof(ActorComponent), typeof(AsepriteSprite)))
+        public ActorSystem() : base(Aspect.All(typeof(ActorComponent), typeof(SuperSprite)))
         {
         }
 
         public override void Initialize(IComponentMapperService mapperService)
         {
             _actorMapper = mapperService.GetMapper<ActorComponent>();
-            _spriteMapper = mapperService.GetMapper<AsepriteSprite>();
+            _spriteMapper = mapperService.GetMapper<SuperSprite>();
         }
 
         public override void Update(GameTime gameTime)
@@ -29,7 +29,7 @@ namespace MonoGame
             foreach(int entity in ActiveEntities)
             {
                 ActorComponent actor = _actorMapper.Get(entity);
-                AsepriteSprite sprite = _spriteMapper.Get(actor.Id);
+                SuperSprite sprite = _spriteMapper.Get(actor.Id);
 
                 sprite.Position = actor.Position;
                 sprite.Bounds.Position = sprite.Position - sprite.Origin * sprite.Scale;
@@ -42,6 +42,7 @@ namespace MonoGame
                 //    actor.Velocity = Vector2.Zero;
  
                 actor.Position += actor.Velocity * Core.SpriteSize * Core.SpriteScale * elapsedSeconds;
+                sprite.Rotation += sprite.Rotation < 0f || sprite.Rotation > 2 * Math.PI ? -sprite.Rotation : 0.01f;
 
                 sprite.Play((actor.Velocity.LengthSquared() < 0.1f ? "Idle" : "Walk"));
                 sprite.Update(gameTime);

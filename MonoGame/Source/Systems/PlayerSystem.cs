@@ -11,16 +11,16 @@ namespace MonoGame
     public class PlayerSystem : EntityUpdateSystem
     {
         private ComponentMapper<PlayerComponent> _playerMapper;
-        private ComponentMapper<AsepriteSprite> _spriteMapper;
+        private ComponentMapper<SuperSprite> _spriteMapper;
 
-        public PlayerSystem() : base(Aspect.All(typeof(PlayerComponent), typeof(AsepriteSprite)))
+        public PlayerSystem() : base(Aspect.All(typeof(PlayerComponent), typeof(SuperSprite)))
         {
         }
 
         public override void Initialize(IComponentMapperService mapperService)
         {
             _playerMapper = mapperService.GetMapper<PlayerComponent>();
-            _spriteMapper = mapperService.GetMapper<AsepriteSprite>();
+            _spriteMapper = mapperService.GetMapper<SuperSprite>();
         }
 
         public override void Update(GameTime gameTime)
@@ -29,7 +29,7 @@ namespace MonoGame
             foreach(int entity in ActiveEntities)
             {
                 PlayerComponent player = _playerMapper.Get(entity);
-                AsepriteSprite sprite = _spriteMapper.Get(player.Id);
+                SuperSprite sprite = _spriteMapper.Get(player.Id);
 
                 sprite.Position = player.Position;
                 //sprite.Bounds.Position = sprite.Position - sprite.Origin * sprite.Scale;// - sprite.PenetrationVector;// - Vector2.One;

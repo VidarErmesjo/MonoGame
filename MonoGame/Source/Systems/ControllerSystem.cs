@@ -8,16 +8,16 @@ namespace MonoGame.Extended.Entities.Systems
 {
     public class ControllerSystem : EntityUpdateSystem
     {
-        private ComponentMapper<AsepriteSprite> _spriteMapper;
+        private ComponentMapper<SuperSprite> _spriteMapper;
         private ComponentMapper<PlayerComponent> _playerMapper;
 
-        public ControllerSystem() : base(Aspect.All(typeof(AsepriteSprite), typeof(PlayerComponent)))
+        public ControllerSystem() : base(Aspect.All(typeof(SuperSprite), typeof(PlayerComponent)))
         {
         }
 
         public override void Initialize(IComponentMapperService mapperService)
         {
-            _spriteMapper = mapperService.GetMapper<AsepriteSprite>();
+            _spriteMapper = mapperService.GetMapper<SuperSprite>();
             _playerMapper = mapperService.GetMapper<PlayerComponent>();
         }
 
@@ -43,7 +43,7 @@ namespace MonoGame.Extended.Entities.Systems
             // Move to PlayerSystem. Have GamePadSystem / Component instead?
             foreach(var entity in ActiveEntities)
             {
-                AsepriteSprite sprite = _spriteMapper.Get(entity);
+                SuperSprite sprite = _spriteMapper.Get(entity);
                 PlayerComponent player = _playerMapper.Get(entity);
 
                 //sprite.Velocity = !direction.IsNaN() ? direction * Core.SpriteSize * Core.SpriteScale : Vector2.Zero;

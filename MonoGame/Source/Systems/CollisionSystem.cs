@@ -11,15 +11,15 @@ namespace MonoGame.Extended.Entities.Systems
 {
     public class CollisionSystem : EntityUpdateSystem
     {
-        private ComponentMapper<AsepriteSprite> _spriteMapper;
+        private ComponentMapper<SuperSprite> _spriteMapper;
 
-        public CollisionSystem() : base(Aspect.All(typeof(AsepriteSprite), typeof(Collision)))
+        public CollisionSystem() : base(Aspect.All(typeof(SuperSprite), typeof(Collision)))
         {
         }
 
         public override void Initialize(IComponentMapperService mapperService)
         {
-            _spriteMapper = mapperService.GetMapper<AsepriteSprite>();
+            _spriteMapper = mapperService.GetMapper<SuperSprite>();
         }
 
         public override void Update(GameTime gameTime)
@@ -32,7 +32,7 @@ namespace MonoGame.Extended.Entities.Systems
 
             foreach(int entity in ActiveEntities)
             {
-                AsepriteSprite sprite = _spriteMapper.Get(entity);
+                SuperSprite sprite = _spriteMapper.Get(entity);
                 Core.CollisionComponent.Insert(sprite);
             }
             Core.CollisionComponent.Update(gameTime);
