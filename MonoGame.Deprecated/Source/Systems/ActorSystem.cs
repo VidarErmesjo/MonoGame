@@ -34,9 +34,9 @@ namespace MonoGame
                 sprite.Position = actor.Position;
                 sprite.Bounds.Position = sprite.Position - sprite.Origin * sprite.Scale;
 
-                actor.Velocity = (sprite.PenetrationVector != Vector2.Zero) ?
+                /*actor.Velocity = (sprite.PenetrationVector != Vector2.Zero) ?
                     actor.Velocity - sprite.PenetrationVector :
-                    actor.Velocity * 0.9f;
+                    actor.Velocity * 0.25f;*/
 
                 //if(actor.Velocity.LengthSquared() < 0.1f)
                 //    actor.Velocity = Vector2.Zero;

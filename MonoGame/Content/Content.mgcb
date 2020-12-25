@@ -10,11 +10,21 @@
 
 #-------------------------------- References --------------------------------#
 
+/reference:..\..\..\..\..\..\.nuget\packages\monogame.aseprite\2.0.3.3\contentFiles\netstandard2.0\MonoGame.Aseprite.ContentPipeline.dll
 
 #---------------------------------- Content ---------------------------------#
 
-#begin Aseprite/Shitsprite.json
-/copy:Aseprite/Shitsprite.json
+#begin Aseprite/Shitsprite.aseprite
+/importer:AsepriteDocumentImporter
+/processor:AsepriteDocumentProcessor
+/processorParam:SheetType=Packed
+/processorParam:MergeDuplicateFrames=True
+/processorParam:IgnoreEmptyFrames=True
+/processorParam:OnlyVisibleLayers=True
+/processorParam:BorderPadding=0
+/processorParam:Spacing=0
+/processorParam:InnerPadding=0
+/build:Aseprite/Shitsprite.aseprite
 
 #begin Fonts/Arial.spritefont
 /importer:FontDescriptionImporter
@@ -29,28 +39,4 @@
 /processorParam:PremultiplyAlpha=True
 /processorParam:TextureFormat=Compressed
 /build:Fonts/Consolas.spritefont
-
-#begin Sprites/Compass.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
-/processorParam:ColorKeyEnabled=True
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:Sprites/Compass.png
-
-#begin Sprites/Shitsprite.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
-/processorParam:ColorKeyEnabled=True
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:Sprites/Shitsprite.png
 

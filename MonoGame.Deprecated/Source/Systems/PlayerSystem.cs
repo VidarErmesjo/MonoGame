@@ -34,12 +34,12 @@ namespace MonoGame
                 sprite.Position = player.Position;
                 //sprite.Bounds.Position = sprite.Position - sprite.Origin * sprite.Scale;// - sprite.PenetrationVector;// - Vector2.One;
 
-                player.Velocity = (sprite.PenetrationVector != Vector2.Zero) ?
+                /*player.Velocity = (sprite.PenetrationVector != Vector2.Zero) ?
                     player.Velocity -sprite.PenetrationVector : 
-                    player.Velocity * 0.5f;
+                    player.Velocity * 0.5f;*/
 
                 //player.Position += (sprite.PenetrationVector != Vector2.Zero) ? -spr : player.Velocity;
-                player.Position += player.Velocity;// - sprite.PenetrationVector;
+                player.Position += player.Velocity ;//- sprite.whatIsThis;// - sprite.PenetrationVector;
                 Core.Camera.Move(player.Velocity);
 
                 sprite.Play((player.Velocity == Vector2.Zero ? "Idle" : "Walk"));

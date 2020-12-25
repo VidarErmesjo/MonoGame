@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended;
 using MonoGame.Extended.Collisions;
+using MonoGame.Extended.Entities;
 using MonoGame.Extended.ViewportAdapters;
 
 namespace MonoGame
@@ -31,7 +32,7 @@ namespace MonoGame
         public static OrthographicCamera Camera { get; private set; }
         public static BoxingViewportAdapter ViewportAdapter { get; private set; }
 
-        //public static CollisionComponent CollisionComponent { get; set; }
+        public static CollisionComponent CollisionComponent { get; set; }
 
         public static MouseState MouseState { get; private set; }
         public static MouseState PreviousMouseState { get; private set; }
@@ -118,7 +119,7 @@ namespace MonoGame
 
             var scaleX = VirtualResolution.Width / (float) TargetResolution.Width;
             var scaleY = VirtualResolution.Height / (float) TargetResolution.Height;
-            ScaleToDevice = MathF.Sqrt(scaleX * scaleX + scaleY * scaleY);
+            ScaleToDevice = (float) Math.Sqrt(scaleX * scaleX + scaleY * scaleY);
 
             MouseState = new MouseState();
             PreviousMouseState = new MouseState();
@@ -169,7 +170,7 @@ namespace MonoGame
 
             if(disposing)
             {
-                //CollisionComponent.Dispose();
+                CollisionComponent.Dispose();
                 GraphicsDeviceManager.Dispose();
                 MainRenderTarget.Dispose();
                 ViewportAdapter.Dispose();

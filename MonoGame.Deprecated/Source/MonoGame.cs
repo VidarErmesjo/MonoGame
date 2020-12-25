@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -7,10 +6,10 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended;
 using MonoGame.Extended.Collisions;
-using MonoGame.Aseprite.Graphics;
-using MonoGame.Aseprite.Documents;
-
-using MonoGame.Entities;
+using MonoGame.Extended.Entities;
+using MonoGame.Extended.Entities.Systems;
+using MonoGame.Aseprite;
+using MonoGame.Components;
 
 // RetroHerzen ???
 namespace MonoGame
@@ -19,21 +18,17 @@ namespace MonoGame
     {
         private bool isDisposed = false;
 
+        // Make Array of players, npcs, etc.
+        public static Entity[] player { get; set; }
+        public static Entity entity { get; set;}
+        //private List<Entity> _entities { get; set; }
 
-        //private readonly GraphicsDeviceManager _graphicsDeviceManager;
-        private readonly EntityManager _entityManager;
+        //private float _scale = 1.0f;
+        public static float rotation { get; private set; }
 
-        private HUD _hud;
-        private Entity[] _actors;
-        private Player _player;
-
-        private CollisionComponent _collisionComponent;
-        private CollisionWorld _collisionWorld;
-
-        private SpriteBatch _spriteBatch;
-
-        public static Core Core { get; private set; }   // => GameManager?
-        public static Assets Assets { get; private set; }   // => AssetsManager?
+        public static Core Core { get; private set; }
+        public static Assets Assets { get; private set; }
+        public static World World { get; private set; }
 
         // Experimental
         public enum Weapon {
@@ -45,37 +40,12 @@ namespace MonoGame
         {
             Core = new Core(this);
             Core.Setup(resolution, fullscreen);
-
-            //_graphicsDeviceManager = new GraphicsDeviceManager(this);
-            _entityManager = new EntityManager();
         }
 
         protected override void LoadContent()
         {
             Assets = new Assets();
             Assets.LoadAllAssets(Core.Content);
-
-            AsepriteDocument asepriteDocument = Assets.Sprite("Shitsprite");//Content.Load<AsepriteDocument>("Aseprite/Shitsprite");
-
-            _actors = new Entity[199];
-
-            var fastRandom = new FastRandom(Environment.TickCount);
-
-            for(int i = 0; i < _actors.Length; i++)
-            {
-                _actors[i] = _entityManager.AddEntity(new Actor(asepriteDocument));
-                _actors[i].Position = new Vector2(Core.VirtualResolution.Width * fastRandom.NextSingle(0f, 1f), Core.VirtualResolution.Height * fastRandom.NextSingle(0f, 1f));
-                _actors[i].Scale = Vector2.One * fastRandom.NextSingle(1f, 4f);
-                _actors[i].Velocity = new Vector2(fastRandom.NextSingle(-1f, 1f), fastRandom.NextSingle(-1f, 1f)) * fastRandom.NextSingle(50f, 100f);
-            }
-
-            _player = _entityManager.AddEntity(new Player(asepriteDocument));
-            _player.Position = new Vector2(
-                Core.VirtualResolution.Width * 0.5f,
-                Core.VirtualResolution.Height * 0.5f);
-            _player.Scale = Vector2.One * 8f;
-
-            base.LoadContent();
         }
 
         protected override void Initialize()
@@ -83,27 +53,40 @@ namespace MonoGame
             base.Initialize();
             Core.Initialize();
 
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
+            player = new Entity[4];
 
-            _hud = new HUD(Assets.Font("Consolas"));
-            _hud.Mount(_player);
-            _hud.Mount(_entityManager);
-            _hud.Mount(Core.Camera);
-            _hud.Mount(Core.ViewportAdapter);
+            World = new WorldBuilder()
+                .AddSystem(new PlayerSystem())
+                .AddSystem(new ActorSystem())
+                .AddSystem(new ControllerSystem())
+                .AddSystem(new WeaponSystem())
+                .AddSystem(new RenderSystem())
+                .AddSystem(new WeatherSystem())
+                .AddSystem(new HUDSystem())
+                .AddSystem(new CollisionSystem())
+                .AddSystem(new ExpirySystem())
+                .AddSystem(new RainfallSystem())
+                .Build();
+            Components.Add(World);
+            World.Initialize();
 
-            /*_collisionComponent = new CollisionComponent(
-                new RectangleF(
-                    Core.Camera.Position.X,
-                    Core.Camera.Position.Y,
-                    Core.VirtualResolution.Width,
-                    Core.VirtualResolution.Height));         
-            foreach(var entity in _entityManager.Entities.Where(e => e.IsCollidable))
-                _collisionComponent.Insert(entity);*/
+            // Entities
+            player[0] = World.CreateEntity();
+            player[0].Attach(new PlayerComponent(player[0].Id, Core.Camera.Center));
+            player[0].Attach(new SuperSprite("Shitsprite"));
+            player[0].Attach(new Collision());
+            player[0].Attach(new WeaponComponent(Weapon.None, 0));
 
-            _collisionWorld = new CollisionWorld(new Vector2(0f, 0f));
-            _collisionWorld.CreateActor(_player);
-            foreach(var actor in _actors.Where(entity => entity.IsCollidable))
-                _collisionWorld.CreateActor(actor);
+            entity = World.CreateEntity();
+            entity.Attach(new ActorComponent(
+                entity.Id,
+                new Vector2(
+                    Core.VirtualResolution.Width * 0.25f,
+                    Core.VirtualResolution.Height * 0.25f),
+                Vector2.Zero));
+            entity.Attach(new SuperSprite("Shitsprite"));
+            entity.Attach(new Collision());
+            entity.Attach(new WeaponComponent(Weapon.None, 0));
         }
 
         System.Diagnostics.Stopwatch Stoppwatch = new System.Diagnostics.Stopwatch();
@@ -130,7 +113,7 @@ namespace MonoGame
             if(Core.KeyboardState.IsKeyDown(Keys.R))
                 Core.ToggleRenderQuality();
 
-            if(Core.GamePadState.Buttons.Back == ButtonState.Pressed || Core.KeyboardState.IsKeyDown(Keys.Escape))
+            if (Core.GamePadState.Buttons.Back == ButtonState.Pressed || Core.KeyboardState.IsKeyDown(Keys.Escape))
             {
                 long updateMin = long.MaxValue;
                 long updateMax = long.MinValue;
@@ -168,24 +151,8 @@ namespace MonoGame
                 Exit();
             }
 
-            // Manager? Dynamic boundary or move to Initialize?
-            _collisionComponent = new CollisionComponent(new RectangleF(
-                Core.Camera.Position.X,
-                Core.Camera.Position.Y,
-                Core.VirtualResolution.Width,
-                Core.VirtualResolution.Height));
-           
-            foreach(var entity in _entityManager.Entities.Where(e => e.IsCollidable))
-                _collisionComponent.Insert(entity);
-            ///
-
-            _entityManager.Update(gameTime);
-            _collisionComponent.Update(gameTime);
-            _collisionWorld.Update(gameTime);
-            _hud.Update(gameTime);
+            //World.Update(gameTime);
             base.Update(gameTime);
-
-            Core.Camera.LookAt(_player.Position);
 
             Stoppwatch.Stop();
             updateTicks.Add(Stoppwatch.ElapsedTicks);
@@ -201,9 +168,7 @@ namespace MonoGame
                 Core.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(Core.MainRenderTarget);
 
             Core.GraphicsDeviceManager.GraphicsDevice.Clear(Color.Transparent);
-
-            _entityManager.Draw(_spriteBatch);
-            _hud.Draw(_spriteBatch);
+            //World.Draw(gameTime);
             base.Draw(gameTime);
 
             if(Core.LowResolution)
@@ -214,6 +179,10 @@ namespace MonoGame
                     SpriteSortMode.Deferred,
                     BlendState.NonPremultiplied,
                     SamplerState.PointClamp);
+                    //null,
+                    //null,
+                    //null,
+                    //Core.ViewportAdapter.GetScaleMatrix());
                 SpriteBatch.Draw(Core.MainRenderTarget, Core.TargetRectangle, Color.White);
                 SpriteBatch.End();
             }
@@ -229,18 +198,17 @@ namespace MonoGame
 
             if(disposing)
             {
-                //_graphicsDeviceManager.Dispose();
-                //_actor.Dispose();
-                foreach(var actor in _actors)
-                    actor.Dispose();
-                _player.Dispose();
-                _collisionComponent.Dispose();
-                _collisionWorld.Dispose();
-                _spriteBatch.Dispose();
                 Assets.Dispose();
                 Core.Dispose();
+                World.Dispose();
+
+                foreach(Entity entity in player)
+                    if(entity != null)
+                        entity.Destroy();
+
+                 entity.Destroy();
             }
-            
+
             base.Dispose(disposing);
 
             isDisposed = true;

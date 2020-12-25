@@ -24,6 +24,7 @@ namespace MonoGame.Aseprite
         private readonly AsepriteData _asepriteData;
         private Color[,] _pixelMap = null;  // Deprecate?
         private string _currentAnimation = "Idle";
+        private string _currentSlice = "Unassigned"; // Blææ?
         private int _currentFrame = 0;
 
         private bool _isAnimated = false;
@@ -161,13 +162,13 @@ namespace MonoGame.Aseprite
             }
         }
 
-        public Bag<Vector2> Vertices
+        public HashSet<Vector2> Vertices
         {
             get
             {
                 if(_hasSlices)
                 {
-                    Bag<Vector2> vertices = new Bag<Vector2>();
+                    HashSet<Vector2> vertices = new HashSet<Vector2>();
                     foreach(var slice in _slices)
                     {
                         vertices.Add(Vector2.Transform(
@@ -195,50 +196,52 @@ namespace MonoGame.Aseprite
                             this.Transform));
                     }
 
-                    int[] indices;
-                    Vector2[] output;
-
-                    Triangulator.Triangulate(vertices.ToArray(), WindingOrder.CounterClockwise, out output, out indices);
+                    //int[] indices;
+                    //Vector2[] output;
+                    //Triangulator.Triangulate(vertices.ToArray(), WindingOrder.CounterClockwise, out output, out indices);
                     /*vertices.Clear();
                     foreach(var index in indices)
                         vertices.Add(output[index]);*/
                         //vertices.Add(Vector2.Transform(output[index], this.Transform));
                     //foreach(int index in indices)
                     //System.Console.WriteLine(index);
+                    //System.Console.WriteLine(vertices.Count + ", " + output.Length + ", " + indices.Length);
 
                     return vertices;
                 }
 
-                return new Bag<Vector2>(-1);
+                return null;
             }
         }
 
         /// <summary>
-        /// Returns a list of triangles defined by sprite slices.
-        /// <param name="Triangles"> List of triangles from slices.
+        /// Returns point list of polygons defined by sprite slices.
+        /// <param name="Polygons"> List of polygons from slices.
         /// </summary>
-        public List<Polygon> Triangles
+        public Bag<Polygon> Polygons
         {
             get
             {
                 if(_hasSlices)
                 {
-                    /*List<Polygon> triangles = new List<Polygon>();
+                    Bag<Polygon> polygons = new Bag<Polygon>();
                     foreach(var slice in _slices)
                     {
-                        List<Vector2> vectorList = new List<Vector2>(3);
+                        Bag<Vector2> vectorList = new Bag<Vector2>(3);
                         vectorList.Add(
                             Vector2.Transform(
                                 new Vector2(
                                     slice.Keys[_currentFrame].Bounds.Left,
                                     slice.Keys[_currentFrame].Bounds.Top),
                                 this.Transform));
+
                         vectorList.Add(
                             Vector2.Transform(
                                 new Vector2(
                                     slice.Keys[_currentFrame].Bounds.Right,
                                     slice.Keys[_currentFrame].Bounds.Top),
                                 this.Transform));
+
                         vectorList.Add(
                             Vector2.Transform(
                                 new Vector2(
@@ -246,9 +249,9 @@ namespace MonoGame.Aseprite
                                     slice.Keys[_currentFrame].Bounds.Bottom),
                                 this.Transform));
 
-                        triangles.Add(new Polygon(vectorList));
+                        polygons.Add(new Polygon(vectorList));
+
                         vectorList.Clear();
-
                         vectorList.Add(
                             Vector2.Transform(
                                 new Vector2(
@@ -270,24 +273,8 @@ namespace MonoGame.Aseprite
                                     slice.Keys[_currentFrame].Bounds.Top),
                                 this.Transform));
 
-                        triangles.Add(new Polygon(vectorList));
-                    }*/ 
-
-                    Vector2[] outputVertices;
-                    int[] outputIndices;
-
-                    Triangulator.Triangulate(
-                        this.Vertices.ToArray<Vector2>(),
-                        WindingOrder.CounterClockwise,
-                        out outputVertices,
-                        out outputIndices);
-
-                    List<Polygon> polygons = new List<Polygon>();
-                    List<Vector2> vertices = new List<Vector2>();
-                    foreach(int index in outputIndices)
-                        vertices.Add(outputVertices[index]);   
-
-                    polygons.Add(new Polygon(vertices));       
+                        polygons.Add(new Polygon(vectorList));
+                    }
 
                     return polygons;
                 }
@@ -297,40 +284,34 @@ namespace MonoGame.Aseprite
         }
 
         /// <summary>
-        /// Returns a list of polygons defined by sprite slices.
-        /// <param name="Polygons"> List of polygons from slices.
+        /// Returns array of polygons defined by sprite slices.
+        /// <param name="Slices">List of polygons from slices.
         /// </summary>
-        public List<Polygon> Polygons
+        public Bag<Polygon> Slices
         {
             get
             {
                 if(_hasSlices)
                 {
-                    List<Polygon> polygons = new List<Polygon>();
+                    _currentSlice = _slices[_currentFrame].Name;
+                    Bag<Polygon> slices = new Bag<Polygon>();
                     foreach(var slice in _slices)
                     {
-                        List<Vector2> vectorList = new List<Vector2>(6);
+                        Bag<Vector2> vectorList = new Bag<Vector2>(4);
                         vectorList.Add(
                             Vector2.Transform(
                                 new Vector2(
                                     slice.Keys[_currentFrame].Bounds.Left,
                                     slice.Keys[_currentFrame].Bounds.Top),
                                 this.Transform));
+
                         vectorList.Add(
                             Vector2.Transform(
                                 new Vector2(
                                     slice.Keys[_currentFrame].Bounds.Right,
                                     slice.Keys[_currentFrame].Bounds.Top),
                                 this.Transform));
-                        vectorList.Add(
-                            Vector2.Transform(
-                                new Vector2(
-                                    slice.Keys[_currentFrame].Bounds.Right,
-                                    slice.Keys[_currentFrame].Bounds.Bottom),
-                                this.Transform));
 
-                        polygons.Add(new Polygon(vectorList));
-                        vectorList.Clear();
                         vectorList.Add(
                             Vector2.Transform(
                                 new Vector2(
@@ -345,17 +326,10 @@ namespace MonoGame.Aseprite
                                     slice.Keys[_currentFrame].Bounds.Bottom),
                                 this.Transform));
 
-                        vectorList.Add(
-                            Vector2.Transform(
-                                new Vector2(
-                                    slice.Keys[_currentFrame].Bounds.Left,
-                                    slice.Keys[_currentFrame].Bounds.Top),
-                                this.Transform));
-
-                        polygons.Add(new Polygon(vectorList));
+                        slices.Add(new Polygon(vectorList));
                     }
 
-                    return polygons;
+                    return slices;
                 }
 
                 return null;
@@ -578,8 +552,8 @@ namespace MonoGame.Aseprite
         {
             // Slice mesh
             if(_hasSlices)
-                foreach(var polygon in this.Polygons)
-                    ShapeExtensions.DrawPolygon(spriteBatch, Vector2.Zero, polygon, Color.Blue, 1f);// spriteBatch.DrawPolygon(Vector2.Zero, polygon, Color.Red, 0.1f);
+                foreach(var slice in this.Slices)
+                    ShapeExtensions.DrawPolygon(spriteBatch, Vector2.Zero, slice, Color.Blue, 1f);
 
             // Inner bounds
             /*if(_hasSlices && this.Rotation != 0f)
@@ -619,196 +593,49 @@ namespace MonoGame.Aseprite
                 effects: this.SpriteEffect,
                 layerDepth: 0);
 
-            Point2 point = Core.ViewportAdapter.PointToScreen(Core.MouseState.X, Core.MouseState.Y);
+            /*Point2 point = Core.ViewportAdapter.PointToScreen(Core.MouseState.X, Core.MouseState.Y);
             foreach(var polygon in this.Polygons)
-                if(Trigonometry.PointInTriangle.Barycentric(
-                        polygon.Vertices[0].ToPoint(),
-                        polygon.Vertices[1].ToPoint(),
-                        polygon.Vertices[2].ToPoint(),
-                        point + Core.Camera.Position))
-                System.Console.WriteLine(
-                    "Point:{0}, Polygon:{1}, PointInTriangle:True",
-                    point,
-                    polygon.Vertices[0] + ", " + polygon.Vertices[1] + ", " + polygon.Vertices[2]);
+                if(Collisions.Check(point, polygon))
+                    System.Console.WriteLine("Inside!");*/
 
            /* if(_hasSlices)
                 foreach(var vertex in this.Vertices)
                     spriteBatch.DrawPoint(vertex.X, vertex.Y, Color.White, 2f);*/
+
+            //System.Console.WriteLine(this.GetHashCode() + ": " + whatIsThis);
+
+            //spriteBatch.DrawLine(this.Rectangle.Center.ToVector2(), whatIsThis, Color.Red, 1f);
         }
 
         /// <summary>
         /// Mandatory function that handles OnCollision events from CollisionComponent.
-        /// Used to further decide weither a collision did occure.
+        /// Used to further decide weither point collision did occure.
         /// </summary>
         public void OnCollision(CollisionEventArgs collisionEventArgs)
         {
-            if(_hasSlices && OnCollisionSubSystem(collisionEventArgs))
+            if(_hasSlices && OnCollisionInnerBounds(collisionEventArgs))
             {
                 this.PenetrationVector = collisionEventArgs.PenetrationVector;
                 this.Color = Color.Red;
+                System.Console.WriteLine("{0}: {1}", this.GetHashCode(), _slices[_currentFrame]);
                 return;
             }
-            /*else if(!_hasSlices && PixelPerfectOnCollision(collisionEventArgs))
-            {
-                this.PenetrationVector = collisionEventArgs.PenetrationVector;
-                this.Color = Color.Red;
-                return;
-            }*/
 
             this.Color = Color.Yellow;
         }
 
-        private bool OnCollisionSubSystem(CollisionEventArgs collisionEventArgs)
-        {
-            SuperSprite other = (SuperSprite) collisionEventArgs.Other;
-            //int collisions = 0;
-            foreach(var A in this.Polygons)
-                foreach(var B in other.Polygons)
-                    if(A != B && A.BoundingRectangle.Intersects(B.BoundingRectangle)) 
-                        foreach(var vertex in A.Vertices)
-                            if(Trigonometry.PointInTriangle.Barycentric(
-                                B.Vertices[0].ToPoint(),
-                                B.Vertices[1].ToPoint(),
-                                B.Vertices[2].ToPoint(),
-                                vertex))
-                                    return true; //collisions++;//return true;
-                        /*{
-                            bool collision = Trigonometry.PointInTriangle.Barycentric(
-                                B.Vertices[0].ToPoint(),
-                                B.Vertices[1].ToPoint(),
-                                B.Vertices[2].ToPoint(),
-                                vertex);
-
-                            if(collision)
-                                return true;
-                        }*/
-            //System.Console.WriteLine(collisions);
-
-            //return collisions > 0 ? true : false;
-
-            return false;
-        }
-
-        /// <summary>
-        /// Edge / diagonal intersection
-        /// <param name="A"> The polygon that intersects polygon B.
-        /// <param name="B"> The polygon that intersects polygon A.
-        /// </summary>
-        public bool PolygonIntersects(Polygon A, Polygon B)
-        {
-            for(int shape = 0; shape < 2; shape++)
-            {
-                if(shape == 1)
-                {
-                    Polygon C = A;
-                    A = B;
-                    B = C;
-                }
-
-                for(int p = 0; p < A.Vertices.Length; p++)
-                {
-                    Vector2 beginA = A.BoundingRectangle.Center;
-                    Vector2 endA = A.Vertices[p];
-
-                    for(int q = 0; q < B.Vertices.Length; q++)
-                    {
-                        Vector2 beginB = B.Vertices[q];
-                        Vector2 endB = B.Vertices[(q + 1) % B.Vertices.Length];
-
-                        float h =   (endB.X - beginB.X) * (beginA.Y - endA.Y) -
-                                    (beginA.X - endA.X) * (endB.Y - beginB.Y);
-
-                        float t1 =  (beginB.Y - endB.Y) * (beginA.X - beginB.X) +
-                                    (endB.X - beginB.X) * (beginA.Y - beginB.Y);
-
-                        float t2 =  (beginA.Y - endA.Y) * (beginA.X - beginB.X) +
-                                    (endA.X - beginA.X) * (beginA.Y - beginB.Y);
-
-                        t1 /= h;
-                        t2 /= h;
-
-                        if(t1 >= 0f && t1 < 1f && t2 >= 0f && t2 < 1f)
-                            return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        // Depricate?
-        private bool PixelPerfectOnCollision(CollisionEventArgs collisionEventArgs)
+        public Vector2 whatIsThis = Vector2.Zero;
+        private bool OnCollisionInnerBounds(CollisionEventArgs collisionEventArgs)
         {
             SuperSprite other = (SuperSprite) collisionEventArgs.Other;
 
-            // New
-            bool swap = this.Rectangle.Width * this.Rectangle.Height > other.Rectangle.Width * other.Rectangle.Height;
-
-            Matrix A = !swap ? this.Transform : other.Transform;
-            Matrix B = !swap ? other.Transform : this.Transform;
-            int widthA = !swap ? this.Rectangle.Width : other.Rectangle.Width;
-            int widthB = !swap ? other.Rectangle.Width : this.Rectangle.Width;
-            int heightA = !swap ? this.Rectangle.Height : other.Rectangle.Height;
-            int heightB = !swap ? other.Rectangle.Height : this.Rectangle.Height;
-            bool[] dataA = !swap ? this.Mask : other.Mask;
-            bool[] dataB = !swap ? other.Mask : this.Mask;
-
-            Matrix inverseB = Matrix.Invert(B);
-            Matrix AB = A * inverseB;
-
-            Vector2 stepX = Vector2.TransformNormal(Vector2.UnitX, AB);
-            Vector2 stepY = Vector2.TransformNormal(Vector2.UnitY, AB);
-
-            Vector2 startOfRow = Vector2.Transform(Vector2.Zero, AB);
-
-            for(int yA = 0; yA < heightA; yA++)
-            {
-                Vector2 positionB = startOfRow;
-                for(int xA = 0; xA < widthA; xA++)
-                {
-                    int xB = (int) Math.Round(positionB.X);
-                    int yB = (int) Math.Round(positionB.Y);
-
-                    if(0 <= xB && xB < widthB && 0 <= yB && yB < heightB)
-                        if(dataA[xA + yA * widthA] && dataB[xB + yB * widthB])
-                            return true;
-
-                    positionB += stepX;
-                }
-
-                startOfRow += stepY;
-            }
-
-            // Old
-            /*Rectangle rectA = new Rectangle(
-                (int) this.Position.X,
-                (int) this.Position.Y,
-                (int) (this.Rectangle.Width * this.Scale),
-                (int) (this.Rectangle.Height * this.Scale));
-
-            Rectangle rectB = new Rectangle(
-                (int) other.Position.X,
-                (int) other.Position.Y,
-                (int) (other.Rectangle.Width * other.Scale),
-                (int) (other.Rectangle.Height * other.Scale));
-
-            int top = Math.Max(rectA.Top, rectB.Top);
-            int bottom = Math.Min(rectA.Bottom, rectB.Bottom);
-            int left = Math.Max(rectA.Left, rectB.Left);
-            int right = Math.Min(rectA.Right, rectB.Right);     
-
-            // Not working perfect for scale other than 1 nor rotation
-            for(int y = top; y < bottom; y++)
-                for(int x = left; x < right; x++)
-                {
-                    int indexA = ((x - rectA.Left) + (y - rectA.Top) * rectA.Width) % this.Mask.Length;
-                    int indexB = ((x - rectB.Left) + (y - rectB.Top) * rectB.Width) % other.Mask.Length;
-                    
-                    if(this.Mask[indexA] && other.Mask[indexB])
+            foreach(var A in this.Slices)
+                foreach(var B in other.Slices)  // Must compare algorithms
+                    if(Collisions.Intersects(A, B))
+                    //if(A != B && Collisions.Intersects(A, B, out whatIsThis))
                         return true;
-                }*/
 
-            return false;            
+            return false;
         }
 
         public void Dispose()

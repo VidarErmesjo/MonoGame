@@ -2,8 +2,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using MonoGame.Aseprite.Documents;
-using MonoGame.Aseprite.Graphics;
 using MonoGame.Extended;
 using System;
 using System.Collections.Generic;
@@ -18,17 +16,15 @@ namespace MonoGame
 
         private bool _hasLoaded = false;
 
-        //private static Dictionary<string, Texture2D> textures;
+        private static Dictionary<string, Texture2D> textures;
         private static Dictionary<string, SpriteFont> fonts;
-        private static Dictionary<string, AsepriteDocument> sprites;
 
         public int Count { get; private set; }
 
         public Assets()
         {
-            //textures = new Dictionary<string, Texture2D>();
+            textures = new Dictionary<string, Texture2D>();
             fonts = new Dictionary<string, SpriteFont>();
-            sprites = new Dictionary<string, AsepriteDocument>();
         }
 
         private string AssetsPath(string path, string filename, string rootDir)
@@ -36,19 +32,14 @@ namespace MonoGame
             return Path.Combine(path.Substring(path.IndexOf(rootDir) + rootDir.Length), filename).Replace('\\', '/').Substring(1);
         }
 
-        /*public static Texture2D Texture(string name)
+        public static Texture2D Texture(string name)
         {
             return textures[name];
-        }*/
+        }
 
         public static SpriteFont Font(string name)
         {
             return fonts[name];
-        }
-
-        public static AsepriteDocument Sprite(string name)
-        {
-            return sprites[name];
         }
 
         public void LoadAllAssets(ContentManager content)
@@ -57,8 +48,7 @@ namespace MonoGame
                 return;
 
             Count = 0;
-            //textures = Load<Texture2D>(content, "Sprites");
-            sprites = Load<AsepriteDocument>(content, "Aseprite");
+            textures = Load<Texture2D>(content, "Sprites");
             fonts = Load<SpriteFont>(content, "Fonts");
 
             _hasLoaded = true;
@@ -105,16 +95,10 @@ namespace MonoGame
 
             if(disposing)
             {
-                /*foreach(var texture in textures)
+                foreach(var texture in textures)
                 {
                     texture.Value.Dispose();
                     System.Console.WriteLine("{0}.Dispose() => OK", texture.Key);
-                }*/
-
-                foreach(var sprite in sprites)
-                {
-                    sprite.Value.Dispose();
-                    System.Console.WriteLine("{0}.Dispose() => OK", sprite.Key);
                 }
 
                 System.Console.WriteLine("Assets.Dispose() => OK");
