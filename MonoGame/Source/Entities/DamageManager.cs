@@ -5,7 +5,7 @@ using MonoGame.Extended.Shapes;
 
 namespace MonoGame.Entities
 {
-    public class HitDetectionManager
+    public class DamageManager
     {
         private readonly Dictionary<string, float> _parts;
 
@@ -14,7 +14,7 @@ namespace MonoGame.Entities
             get => _parts;
         }
 
-        public HitDetectionManager(List<string> parts)
+        public DamageManager(List<string> parts)
         {
             _parts = new Dictionary<string, float>();
             foreach(var part in parts)

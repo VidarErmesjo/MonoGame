@@ -5,7 +5,6 @@ namespace MonoGame
 {
     public class WeaponComponent : IEquatable<WeaponComponent>
     {
-        public MonoGame.Weapon Type { get; }
         public int Id { get; }
 
         public float charge { get; set; }
@@ -13,9 +12,8 @@ namespace MonoGame
         public Vector2 origin { get ; set; }
         public Vector2 destination { get; set; }
 
-        public WeaponComponent(MonoGame.Weapon type, int id)
+        public WeaponComponent(int id)
         {
-            Type = type;
             Id = id;
             charge = 0.0f;
             isCharging = false;

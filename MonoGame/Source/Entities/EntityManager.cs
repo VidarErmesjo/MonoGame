@@ -2,30 +2,33 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MonoGame.Extended.Collections;
 
 namespace MonoGame.Entities
 {
-    public interface IEntityManager
+    interface IEntityManager
     {
-        T AddEntity<T>(T entity) where T : Entity;
+        T AddEntity<T>(T entity) where T : IEntity;
     }
 
     public class EntityManager : IEntityManager
     {
-        private readonly List<Entity> _entities;
-        public IEnumerable<Entity> Entities => _entities;
+        private readonly MonoGame _game;
+        private readonly Bag<IEntity> _entities;
 
-        public int Count
+        public IEnumerable<Entity> Entities => _entities.OfType<Entity>();
+        public IEnumerable<Actor> Actors => _entities.OfType<Actor>();
+        public IEnumerable<Player> Players => _entities.OfType<Player>();
+
+        public int Count => _entities.Count;
+
+        public EntityManager(MonoGame game = null)
         {
-            get => _entities.Count;
+            _game = game;
+            _entities = new Bag<IEntity>();
         }
 
-        public EntityManager()
-        {
-            _entities = new List<Entity>();
-        }
-
-        public T AddEntity<T>(T entity) where T : Entity
+        public T AddEntity<T>(T entity) where T : IEntity
         {
             _entities.Add(entity);
             return entity;
@@ -34,23 +37,35 @@ namespace MonoGame.Entities
         public void Update(GameTime gameTime)
         {
             foreach(var entity in _entities)
+            {
                 entity.Update(gameTime);
-
-            _entities.RemoveAll(e => e.IsDestroyed);
+                if(entity.IsDestroyed)
+                    _entities.Remove(entity);
+            }
         }
 
-        public void Draw(SpriteBatch spriteBatch)
+        public void Draw(SpriteBatch spriteBatch, Effect effect = null, Matrix? transformMatrix = null)
         {
             spriteBatch.Begin(
-                sortMode: SpriteSortMode.Deferred,
+                sortMode: SpriteSortMode.Immediate,
                 blendState: BlendState.Additive,
                 samplerState: SamplerState.PointClamp,
-                transformMatrix: Core.Camera.GetViewMatrix());
+                effect: effect,
+                transformMatrix: transformMatrix);
 
-            foreach(var entity in _entities.Where(e => !e.IsDestroyed))
-                entity.Draw(spriteBatch);
+            foreach(var entity in _entities)
+                if(!entity.IsDestroyed)
+                    entity.Draw(spriteBatch);
 
             spriteBatch.End();
+        }
+
+        public void UnloadContent()
+        {
+            _game?.Dispose();
+            
+            foreach(var entity in _entities)
+                entity.Dispose();
         }
     }
 }

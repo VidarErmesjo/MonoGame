@@ -26,5 +26,6 @@
     <PackageReference Include="MonoGame.Extended" Version="3.8.0" />
     <PackageReference Include="MonoGame.Extended.Collisions" Version="3.8.0" />
     <PackageReference Include="MonoGame.Aseprite" Version="2.0.3.3" />
+    <PackageReference Include="MonoGame.Extended.Particles" Version="3.8.0" />
   </ItemGroup>
 </Project>

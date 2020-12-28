@@ -10,23 +10,28 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace MonoGame
+namespace MonoGame.Assets
 {
-    public class Assets : IDisposable
+    interface IAssetManager : IDisposable
+    {
+    }
+
+    public class AssetManager : IAssetManager
     {
         private bool isDisposed = false;
 
+        private readonly ContentManager _content;
+
         private bool _hasLoaded = false;
 
-        //private static Dictionary<string, Texture2D> textures;
-        private static Dictionary<string, SpriteFont> fonts;
-        private static Dictionary<string, AsepriteDocument> sprites;
+        private Dictionary<string, Texture2D> textures;
+        private Dictionary<string, SpriteFont> fonts;
+        private Dictionary<string, AsepriteDocument> sprites;
 
-        public int Count { get; private set; }
-
-        public Assets()
+        public AssetManager(ContentManager content)
         {
-            //textures = new Dictionary<string, Texture2D>();
+            _content = content;
+            textures = new Dictionary<string, Texture2D>();
             fonts = new Dictionary<string, SpriteFont>();
             sprites = new Dictionary<string, AsepriteDocument>();
         }
@@ -36,38 +41,28 @@ namespace MonoGame
             return Path.Combine(path.Substring(path.IndexOf(rootDir) + rootDir.Length), filename).Replace('\\', '/').Substring(1);
         }
 
-        /*public static Texture2D Texture(string name)
-        {
-            return textures[name];
-        }*/
+        public Texture2D Texture(string name) => textures[name];
 
-        public static SpriteFont Font(string name)
-        {
-            return fonts[name];
-        }
+        public SpriteFont Font(string name) => fonts[name];
+     
+        public AsepriteDocument Sprite(string name) => sprites[name];
 
-        public static AsepriteDocument Sprite(string name)
-        {
-            return sprites[name];
-        }
-
-        public void LoadAllAssets(ContentManager content)
+        public void LoadContent()
         {
             if(_hasLoaded)
                 return;
 
-            Count = 0;
-            //textures = Load<Texture2D>(content, "Sprites");
-            sprites = Load<AsepriteDocument>(content, "Aseprite");
-            fonts = Load<SpriteFont>(content, "Fonts");
+            textures = Load<Texture2D>("Textures");
+            sprites = Load<AsepriteDocument>("Aseprite");
+            fonts = Load<SpriteFont>("Fonts");
 
             _hasLoaded = true;
-            System.Console.WriteLine("Assets.LoadAllAssets() => OK");
+            System.Console.WriteLine("AssetsManager.LoadAllAssets() => OK");
         }
 
-        public Dictionary<string, T> Load<T>(ContentManager content, string directory)
+        public Dictionary<string, T> Load<T>(string directory)
         {
-            DirectoryInfo dir = new DirectoryInfo(Path.Combine(content.RootDirectory, directory));
+            DirectoryInfo dir = new DirectoryInfo(Path.Combine(_content.RootDirectory, directory));
             if (!dir.Exists)
                 throw new DirectoryNotFoundException();
 
@@ -78,18 +73,22 @@ namespace MonoGame
                 string asset = AssetsPath(
                     file.DirectoryName,
                     Path.GetFileNameWithoutExtension(file.Name),
-                    content.RootDirectory);
+                    _content.RootDirectory);
 
-                Count++;
                 System.Console.WriteLine(
                     "{0}.Load<T>() => Loaded",
                     asset.Split('/').Last());
                     //asset.GetType().FullName);    
                             
-                tmp.Add(asset.Split('/').Last(), content.Load<T>(asset));
+                tmp.Add(asset.Split('/').Last(), _content.Load<T>(asset));
             }
 
             return tmp;
+        }
+
+        public void UnloadContent()
+        {
+            this.Dispose();
         }
 
         public void Dispose()
@@ -105,11 +104,13 @@ namespace MonoGame
 
             if(disposing)
             {
-                /*foreach(var texture in textures)
+                _content.Dispose();
+                
+                foreach(var texture in textures)
                 {
                     texture.Value.Dispose();
                     System.Console.WriteLine("{0}.Dispose() => OK", texture.Key);
-                }*/
+                }
 
                 foreach(var sprite in sprites)
                 {
@@ -117,13 +118,13 @@ namespace MonoGame
                     System.Console.WriteLine("{0}.Dispose() => OK", sprite.Key);
                 }
 
-                System.Console.WriteLine("Assets.Dispose() => OK");
+                System.Console.WriteLine("AssetsManager.Dispose() => OK");
             }
 
             isDisposed = true;
         }
 
-        ~Assets()
+        ~AssetManager()
         {
             Dispose(false);
         }

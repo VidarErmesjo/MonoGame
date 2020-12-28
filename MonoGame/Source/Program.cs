@@ -52,7 +52,7 @@ namespace MonoGame
                 }
             }
 
-            using (var game = new MonoGame(resolution,fullscreen))
+            using (var game = new MonoGame(resolution, fullscreen))
                 game.Run();
         }
     }

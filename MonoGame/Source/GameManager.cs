@@ -9,44 +9,45 @@ using MonoGame.Extended.ViewportAdapters;
 
 namespace MonoGame
 {
-    public class Core : IDisposable
+    public class GameManager : IDisposable
     {
-        private bool isDisposed = false;
+        private bool isDisposed;
 
-        private static bool _setup = false;
-        private static bool _initialized = false;
+        private bool _setup = false;
+        private bool _initialized = false;
 
-        public static GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
-        public static GameWindow Window { get; private set; }
-        public static ContentManager Content { get; private set; }
+        public GraphicsDeviceManager GraphicsDeviceManager;// { get; private set; }
+        public GameWindow Window { get; private set; }
+        public ContentManager Content { get; private set; }
 
-        public static Size VirtualResolution { get; private set; }
-        public static Size TargetResolution { get; private set; }
-        public static RenderTarget2D MainRenderTarget { get; private set; }
-        public static Rectangle TargetRectangle { get; private set; }
-        public static float ScaleToDevice { get; private set; }
-        public static bool IsFullScreen { get; private set; }
-        public static bool LowResolution { get; private set; }
+        public Size VirtualResolution { get; private set; }
+        public Size DeviceResolution { get; private set; }
+        public RenderTarget2D DeviceRenderTarget { get; private set; }
+        public RenderTarget2D VirtualRenderTarget { get; private set; }
+        public Rectangle DeviceRectangle { get; private set; }
+        public float ScaleToDevice { get; private set; }
+        public bool IsFullScreen { get; private set; }
+        public bool LowResolution { get; private set; }
 
-        public static OrthographicCamera Camera { get; private set; }
-        public static BoxingViewportAdapter ViewportAdapter { get; private set; }
+        public OrthographicCamera Camera { get; private set; }
+        public BoxingViewportAdapter ViewportAdapter { get; private set; }
 
         //public static CollisionComponent CollisionComponent { get; set; }
 
-        public static MouseState MouseState { get; private set; }
-        public static MouseState PreviousMouseState { get; private set; }
-        public static KeyboardState KeyboardState { get; private set; }
-        public static KeyboardState PreviousKeyboardState { get; private set; }
-        public static GamePadState GamePadState { get; private set; }
-        public static GamePadState PreviousGamePadState { get; private set; }
+        public MouseState MouseState { get; private set; }
+        public MouseState PreviousMouseState { get; private set; }
+        public KeyboardState KeyboardState { get; private set; }
+        public KeyboardState PreviousKeyboardState { get; private set; }
+        public GamePadState GamePadState { get; private set; }
+        public GamePadState PreviousGamePadState { get; private set; }
 
         private const float _meterToSpriteRatio = 1f;
-        public static float SpriteSize { get; private set; }
-        public static float SpriteScale { get; private set; }
-        public static float MetersPerPixel { get; private set; }
-        public static Size2 MetersPerScreen { get; private set; }
+        public float SpriteSize { get; private set; }
+        public float SpriteScale { get; private set; }
+        public float MetersPerPixel { get; private set; }
+        public Size2 MetersPerScreen { get; private set; }
 
-        public Core(MonoGame game)
+        public GameManager(Game game, Size resolution = default(Size), bool isFullscreen = true)
         {
             GraphicsDeviceManager = new GraphicsDeviceManager(game);
             game.IsMouseVisible = true;
@@ -55,10 +56,7 @@ namespace MonoGame
 
             Content = game.Content;
             Window = game.Window;
-         }
 
-        public static void Setup(Size resolution = default(Size), bool isFullscreen = true)
-        {
             if(resolution == default(Size))
                 resolution = new Size(3840, 2160);
 
@@ -66,9 +64,9 @@ namespace MonoGame
             IsFullScreen = isFullscreen;
 
             _setup = true;
-        }
+         }
 
-        public static void Initialize()
+        public void Initialize()
         {
             if(!_setup)
                 throw new InvalidOperationException("Core.Setup() must preceed Core.Initialize()");
@@ -77,32 +75,44 @@ namespace MonoGame
                 return;
 
             Window.AllowUserResizing = false;
+            //Window.ClientSizeChanged() += OnChange();
 
-            LowResolution = false;
+            LowResolution = true;
 
             if(IsFullScreen)
-                TargetResolution = new Size(
+                DeviceResolution = new Size(
                     GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width,
                     GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height);
             else
-                TargetResolution = new Size(
+                DeviceResolution = new Size(
                     GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width / 2,
                     GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height / 2);
 
-            TargetRectangle = new Rectangle(0, 0, TargetResolution.Width, TargetResolution.Height);
+            DeviceRectangle = new Rectangle(0, 0, DeviceResolution.Width, DeviceResolution.Height);
 
-            GraphicsDeviceManager.PreferredBackBufferWidth = TargetResolution.Width;
-            GraphicsDeviceManager.PreferredBackBufferHeight = TargetResolution.Height;
+            GraphicsDeviceManager.PreferredBackBufferWidth = DeviceResolution.Width;
+            GraphicsDeviceManager.PreferredBackBufferHeight = DeviceResolution.Height;
             GraphicsDeviceManager.IsFullScreen = IsFullScreen;
             GraphicsDeviceManager.SynchronizeWithVerticalRetrace = true;
             GraphicsDeviceManager.HardwareModeSwitch = false;
             GraphicsDeviceManager.ApplyChanges();
             GraphicsDeviceManager.HardwareModeSwitch = true;
 
-            MainRenderTarget = new RenderTarget2D(
+            DeviceRenderTarget = new RenderTarget2D(
                 graphicsDevice: GraphicsDeviceManager.GraphicsDevice,
-                width: Core.VirtualResolution.Width,
-                height: Core.VirtualResolution.Height,
+                width: DeviceResolution.Width,
+                height: DeviceResolution.Height,
+                false,
+                SurfaceFormat.Color,
+                DepthFormat.None,
+                preferredMultiSampleCount: GraphicsDeviceManager.GraphicsDevice.PresentationParameters.MultiSampleCount,
+                RenderTargetUsage.DiscardContents);
+
+
+            VirtualRenderTarget = new RenderTarget2D(
+                graphicsDevice: GraphicsDeviceManager.GraphicsDevice,
+                width: VirtualResolution.Width,
+                height: VirtualResolution.Height,
                 false,
                 SurfaceFormat.Color,
                 DepthFormat.None,
@@ -116,8 +126,8 @@ namespace MonoGame
                 VirtualResolution.Height);
             Camera = new OrthographicCamera(ViewportAdapter);
 
-            var scaleX = VirtualResolution.Width / (float) TargetResolution.Width;
-            var scaleY = VirtualResolution.Height / (float) TargetResolution.Height;
+            var scaleX = VirtualResolution.Width / (float) DeviceResolution.Width;
+            var scaleY = VirtualResolution.Height / (float) DeviceResolution.Height;
             ScaleToDevice = MathF.Sqrt(scaleX * scaleX + scaleY * scaleY);
 
             MouseState = new MouseState();
@@ -138,7 +148,7 @@ namespace MonoGame
             _initialized = true;
 
             System.Console.WriteLine("Core.Initialize() => OK");
-            System.Console.WriteLine("VirtualResolution => {0}, TargetResolution => {1}, ScaleToDevice => {2}", VirtualResolution, TargetResolution, ScaleToDevice);
+            System.Console.WriteLine("VirtualResolution => {0}, DeviceResolution => {1}, ScaleToDevice => {2}", VirtualResolution, DeviceResolution, ScaleToDevice);
         }
 
         public void ToggleRenderQuality()
@@ -156,22 +166,27 @@ namespace MonoGame
             GamePadState = GamePad.GetState(PlayerIndex.One);
         }
 
+        public void UnloadContent()
+        {
+            this.Dispose();
+        }
+
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-        public virtual void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             if(isDisposed)
                 return;
 
             if(disposing)
             {
-                //CollisionComponent.Dispose();
                 GraphicsDeviceManager.Dispose();
-                MainRenderTarget.Dispose();
+                DeviceRenderTarget.Dispose();
+                VirtualRenderTarget.Dispose();
                 ViewportAdapter.Dispose();
                 System.Console.WriteLine("Core.Dispose() => OK");
             }
@@ -179,7 +194,7 @@ namespace MonoGame
             isDisposed = true;
         }
 
-        ~Core()
+        ~GameManager()
         {
             Dispose(false);
         }

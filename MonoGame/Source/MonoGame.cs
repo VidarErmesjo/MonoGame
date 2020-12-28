@@ -10,7 +10,13 @@ using MonoGame.Extended.Collisions;
 using MonoGame.Aseprite.Graphics;
 using MonoGame.Aseprite.Documents;
 
+using MonoGame.Assets;
+using MonoGame.Components;
+using MonoGame.Collisions;
+using MonoGame.Particles;
+using MonoGame.Effects;
 using MonoGame.Entities;
+using MonoGame.Weapons;
 
 // RetroHerzen ???
 namespace MonoGame
@@ -19,118 +25,103 @@ namespace MonoGame
     {
         private bool isDisposed = false;
 
-
-        //private readonly GraphicsDeviceManager _graphicsDeviceManager;
-        private readonly EntityManager _entityManager;
-
-        private HUD _hud;
-        private Entity[] _actors;
-        private Player _player;
-
-        private CollisionComponent _collisionComponent;
-        private CollisionWorld _collisionWorld;
-
+        private Effect _pixelatorShader;
         private SpriteBatch _spriteBatch;
 
-        public static Core Core { get; private set; }   // => GameManager?
-        public static Assets Assets { get; private set; }   // => AssetsManager?
-
-        // Experimental
-        public enum Weapon {
-            None = 0,
-            Something
-        };
+        public readonly AssetManager AssetManager;
+        public readonly CollisionManager CollisionManager;
+        public readonly EffectManager EffectManager;
+        public readonly EntityManager EntityManager;
+        public readonly FastRandom FastRandom;
+        public readonly GameManager GameManager;
+        public readonly HUD HUD;
+        public readonly ParticleManager ParticleManager;
+        public readonly WeaponManager WeaponManager;
 
         public MonoGame(Size resolution = default(Size), bool fullscreen = true)
         {
-            Core = new Core(this);
-            Core.Setup(resolution, fullscreen);
-
-            //_graphicsDeviceManager = new GraphicsDeviceManager(this);
-            _entityManager = new EntityManager();
+            AssetManager = new AssetManager(Content);
+            CollisionManager = new CollisionManager(this);
+            EffectManager = new EffectManager(this);
+            EntityManager = new EntityManager();
+            FastRandom = new FastRandom(Environment.TickCount);
+            GameManager = new GameManager(this, resolution, fullscreen);
+            HUD = new HUD(this);
+            ParticleManager = new ParticleManager(this);
+            WeaponManager = new WeaponManager(this);
         }
 
         protected override void LoadContent()
         {
-            Assets = new Assets();
-            Assets.LoadAllAssets(Core.Content);
+            AssetManager.LoadContent();
+            EffectManager.LoadContent();
+            HUD.LoadContent();
 
-            AsepriteDocument asepriteDocument = Assets.Sprite("Shitsprite");//Content.Load<AsepriteDocument>("Aseprite/Shitsprite");
+            AsepriteDocument asepriteDocument = AssetManager.Sprite("Shitsprite");//Content.Load<AsepriteDocument>("Aseprite/Shitsprite");
 
-            _actors = new Entity[199];
-
-            var fastRandom = new FastRandom(Environment.TickCount);
-
-            for(int i = 0; i < _actors.Length; i++)
+            for(int i = 0; i < 99; i++)
             {
-                _actors[i] = _entityManager.AddEntity(new Actor(asepriteDocument));
-                _actors[i].Position = new Vector2(Core.VirtualResolution.Width * fastRandom.NextSingle(0f, 1f), Core.VirtualResolution.Height * fastRandom.NextSingle(0f, 1f));
-                _actors[i].Scale = Vector2.One * fastRandom.NextSingle(1f, 4f);
-                _actors[i].Velocity = new Vector2(fastRandom.NextSingle(-1f, 1f), fastRandom.NextSingle(-1f, 1f)) * fastRandom.NextSingle(50f, 100f);
+                var entity = EntityManager.AddEntity(new Actor(asepriteDocument));
+
+                entity.Position = new Vector2(GameManager.VirtualResolution.Width * FastRandom.NextSingle(0f, 1f), GameManager.VirtualResolution.Height * FastRandom.NextSingle(0f, 1f));
+                entity.Scale = Vector2.One * FastRandom.NextSingle(1f, 4f);
+                entity.Velocity = new Vector2(FastRandom.NextSingle(-1f, 1f), FastRandom.NextSingle(-1f, 1f)) * FastRandom.NextSingle(50f, 100f);
             }
 
-            _player = _entityManager.AddEntity(new Player(asepriteDocument));
-            _player.Position = new Vector2(
-                Core.VirtualResolution.Width * 0.5f,
-                Core.VirtualResolution.Height * 0.5f);
-            _player.Scale = Vector2.One * 8f;
+            var player = EntityManager.AddEntity(new Player(asepriteDocument));
+            player.Position = new Vector2(
+                GameManager.VirtualResolution.Width * 0.5f,
+                GameManager.VirtualResolution.Height * 0.5f);
+            player.Scale = Vector2.One * 8f;
 
+            _pixelatorShader = Content.Load<Effect>("Effects/Sepia");
+
+            // Different types
+            //_particleManager = new ParticleManager(GameManager.GraphicsDeviceManager.GraphicsDevice, _effectManager);
+            //var particle = _particleManager.AddParticle(new Particle(_assetManager.Texture("Pixel")));
+            ParticleManager.AddParticle(new Particle(AssetManager.Texture("Pixel")));
+
+            Console.WriteLine("[Entities] Players:{0}, Actors:{1}: Total:{2}", EntityManager.Players.Count(), EntityManager.Actors.Count(), EntityManager.Entities.Count());
             base.LoadContent();
         }
 
         protected override void Initialize()
         {
             base.Initialize();
-            Core.Initialize();
+            GameManager.Initialize();
+            CollisionManager.Initialize();
+            EffectManager.Initialize();
+            HUD.Initialize();
 
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            _hud = new HUD(Assets.Font("Consolas"));
-            _hud.Mount(_player);
-            _hud.Mount(_entityManager);
-            _hud.Mount(Core.Camera);
-            _hud.Mount(Core.ViewportAdapter);
-
-            /*_collisionComponent = new CollisionComponent(
-                new RectangleF(
-                    Core.Camera.Position.X,
-                    Core.Camera.Position.Y,
-                    Core.VirtualResolution.Width,
-                    Core.VirtualResolution.Height));         
-            foreach(var entity in _entityManager.Entities.Where(e => e.IsCollidable))
-                _collisionComponent.Insert(entity);*/
-
-            _collisionWorld = new CollisionWorld(new Vector2(0f, 0f));
-            _collisionWorld.CreateActor(_player);
-            foreach(var actor in _actors.Where(entity => entity.IsCollidable))
-                _collisionWorld.CreateActor(actor);
         }
 
-        System.Diagnostics.Stopwatch Stoppwatch = new System.Diagnostics.Stopwatch();
+        Stopwatch Stoppwatch = new Stopwatch();
         private List<long> drawTicks = new List<long>();
         private List<long> updateTicks = new List<long>();
         protected override void Update(GameTime gameTime)
         {
             Stoppwatch.Reset();
             Stoppwatch.Start();
-            Core.Update();
+            GameManager.Update();
 
-            if(Core.KeyboardState.IsKeyDown(Keys.W))
-                Core.Camera.Zoom += 0.01f;
+            if(GameManager.KeyboardState.IsKeyDown(Keys.W))
+                GameManager.Camera.Zoom += 0.01f;
 
-            if(Core.KeyboardState.IsKeyDown(Keys.S))
-                Core.Camera.Zoom -= 0.01f;
+            if(GameManager.KeyboardState.IsKeyDown(Keys.S))
+                GameManager.Camera.Zoom -= 0.01f;
 
-            if(Core.KeyboardState.IsKeyDown(Keys.A))
-                Core.Camera.Rotation -= 0.01f;
+            if(GameManager.KeyboardState.IsKeyDown(Keys.A))
+                GameManager.Camera.Rotation -= 0.01f;
 
-            if(Core.KeyboardState.IsKeyDown(Keys.D))
-                Core.Camera.Rotation += 0.01f;
+            if(GameManager.KeyboardState.IsKeyDown(Keys.D))
+                GameManager.Camera.Rotation += 0.01f;
     
-            if(Core.KeyboardState.IsKeyDown(Keys.R))
-                Core.ToggleRenderQuality();
+            if(GameManager.KeyboardState.IsKeyDown(Keys.R))
+                GameManager.ToggleRenderQuality();
 
-            if(Core.GamePadState.Buttons.Back == ButtonState.Pressed || Core.KeyboardState.IsKeyDown(Keys.Escape))
+            if(GameManager.GamePadState.Buttons.Back == ButtonState.Pressed || GameManager.KeyboardState.IsKeyDown(Keys.Escape))
             {
                 long updateMin = long.MaxValue;
                 long updateMax = long.MinValue;
@@ -168,24 +159,13 @@ namespace MonoGame
                 Exit();
             }
 
-            // Manager? Dynamic boundary or move to Initialize?
-            _collisionComponent = new CollisionComponent(new RectangleF(
-                Core.Camera.Position.X,
-                Core.Camera.Position.Y,
-                Core.VirtualResolution.Width,
-                Core.VirtualResolution.Height));
-           
-            foreach(var entity in _entityManager.Entities.Where(e => e.IsCollidable))
-                _collisionComponent.Insert(entity);
-            ///
-
-            _entityManager.Update(gameTime);
-            _collisionComponent.Update(gameTime);
-            _collisionWorld.Update(gameTime);
-            _hud.Update(gameTime);
+            EntityManager.Update(gameTime);
+            ParticleManager.Update(gameTime);
+            CollisionManager.Update(gameTime);
+            HUD.Update(gameTime);
             base.Update(gameTime);
 
-            Core.Camera.LookAt(_player.Position);
+            GameManager.Camera.LookAt(EntityManager.Players.First().Position);
 
             Stoppwatch.Stop();
             updateTicks.Add(Stoppwatch.ElapsedTicks);
@@ -193,33 +173,63 @@ namespace MonoGame
 
         protected override void Draw(GameTime gameTime)
         {
-            SpriteBatch SpriteBatch = new SpriteBatch(Core.GraphicsDeviceManager.GraphicsDevice);
             Stoppwatch.Reset();
             Stoppwatch.Start();
 
-            if(Core.LowResolution)
-                Core.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(Core.MainRenderTarget);
+            GameManager.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget((GameManager.LowResolution ? GameManager.VirtualRenderTarget : GameManager.DeviceRenderTarget));
+            GameManager.GraphicsDeviceManager.GraphicsDevice.Clear(Color.Transparent);
 
-            Core.GraphicsDeviceManager.GraphicsDevice.Clear(Color.Transparent);
+            EntityManager.Draw(
+                _spriteBatch,
+                transformMatrix: GameManager.Camera.GetViewMatrix());
 
-            _entityManager.Draw(_spriteBatch);
-            _hud.Draw(_spriteBatch);
+            ParticleManager.Draw(
+                _spriteBatch, transformMatrix:
+                GameManager.Camera.GetViewMatrix());
+
+            this.Draw(_spriteBatch, null);
+            HUD.Draw(_spriteBatch);
             base.Draw(gameTime);
-
-            if(Core.LowResolution)
-            {
-                Core.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(null);
-
-                SpriteBatch.Begin(
-                    SpriteSortMode.Deferred,
-                    BlendState.NonPremultiplied,
-                    SamplerState.PointClamp);
-                SpriteBatch.Draw(Core.MainRenderTarget, Core.TargetRectangle, Color.White);
-                SpriteBatch.End();
-            }
 
             Stoppwatch.Stop();
             drawTicks.Add(Stoppwatch.ElapsedTicks);
+        }
+
+        /// <summary>
+        ///     Draws to device
+        /// </summary>
+        /// <remarks>   
+        ///     Includes effects
+        /// </remarks>
+        private void Draw(SpriteBatch spriteBatch, Effect effect = null)
+        {
+           GameManager.GraphicsDeviceManager.GraphicsDevice.SetRenderTarget(null);
+
+            spriteBatch.Begin(
+                SpriteSortMode.Immediate,
+                BlendState.NonPremultiplied,
+                SamplerState.PointClamp,
+                effect: effect);
+
+            spriteBatch.Draw(
+                (GameManager.LowResolution ? GameManager.VirtualRenderTarget : GameManager.DeviceRenderTarget),
+                GameManager.DeviceRectangle,
+                Color.White);
+
+            spriteBatch.End();
+        }
+
+        protected override void UnloadContent()
+        {
+            GameManager.UnloadContent();
+            AssetManager.UnloadContent();
+            CollisionManager.UnloadContent();
+            EffectManager.UnloadContent();
+            EntityManager.UnloadContent();
+            HUD.UnloadContent();
+            ParticleManager.UnloadContent();
+            base.UnloadContent();
+            this.Dispose();
         }
 
         protected override void Dispose(bool disposing)
@@ -229,19 +239,9 @@ namespace MonoGame
 
             if(disposing)
             {
-                //_graphicsDeviceManager.Dispose();
-                //_actor.Dispose();
-                foreach(var actor in _actors)
-                    actor.Dispose();
-                _player.Dispose();
-                _collisionComponent.Dispose();
-                _collisionWorld.Dispose();
+                _pixelatorShader.Dispose();
                 _spriteBatch.Dispose();
-                Assets.Dispose();
-                Core.Dispose();
             }
-            
-            base.Dispose(disposing);
 
             isDisposed = true;
         }
